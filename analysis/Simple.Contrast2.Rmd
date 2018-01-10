@@ -1,0 +1,127 @@
+---
+title: "Simulation with Signal Example"
+author: "Yuxin Zou"
+date: 2018-01-10
+output: html_document
+---
+
+```{r read-chunk, include=FALSE, cache=FALSE}
+knitr::read_chunk("chunks.R")
+```
+
+<!-- Update knitr chunk options -->
+```{r knitr-opts-chunk, include=FALSE}
+```
+
+<!-- Insert the date the file was last updated -->
+```{r last-updated, echo=FALSE, results='asis'}
+```
+
+<!-- Insert the R version (Git commit SHA1) if Git repository exists and R
+ package git2r is installed -->
+```{r R-version, echo=FALSE, results='asis'}
+```
+
+```{r, echo=FALSE}
+# TEMPORARY.
+knitr::opts_chunk$set(eval = TRUE)
+```
+
+Loading the functions:
+
+```{r}
+library(ashr)
+library(plyr)
+library(mvtnorm)
+library(assertthat)
+source('~/Documents/GitHub/mashr-zou/R/compute_covs.R')
+source('~/Documents/GitHub/mashr-zou/R/cov_udi.R')
+source('~/Documents/GitHub/mashr-zou/R/data2cov.R')
+source('~/Documents/GitHub/mashr-zou/R/ed.R')
+source('~/Documents/GitHub/mashr-zou/R/est_cor.R')
+source('~/Documents/GitHub/mashr-zou/R/get_functions.R')
+source('~/Documents/GitHub/mashr-zou/R/likelihoods_origdata.R')
+source('~/Documents/GitHub/mashr-zou/R/likelihoods_scaleddata.R')
+source('~/Documents/GitHub/mashr-zou/R/mash.R')
+source('~/Documents/GitHub/mashr-zou/R/opt.R')
+source('~/Documents/GitHub/mashr-zou/R/plots.R')
+source('~/Documents/GitHub/mashr-zou/R/posterior.R')
+source('~/Documents/GitHub/mashr-zou/R/posterior_common_cov.R')
+source('~/Documents/GitHub/mashr-zou/R/posterior_lowmem.R')
+source('~/Documents/GitHub/mashr-zou/R/RcppExports.R')
+source('~/Documents/GitHub/mashr-zou/R/set_data.R')
+source('~/Documents/GitHub/mashr-zou/R/simulations.R')
+```
+
+# Simulation Design
+
+In the simulation, $$c_{j2...8} = c_{j1} + \delta_{j}$$
+$$\hat{c}_{j} \sim N_{8}(c_{j}, \frac{1}{2}I)$$
+Let L be the contrast matrix. Therefore, $$\hat{\delta}_{j} = L\hat{c}_{j} \sim N_{7}(\delta_{j}, \frac{1}{2}LL')$$
+
+We first generate the data:
+```{r}
+set.seed(1)
+data = sim2(nsamp = 2000, ncond = 8)
+```
+This simulation routine creates a dataset with 8 conditions, and four different types of deviations $\delta_{j}$: null, independent among conditions, condition-specific in condition 2, and shared (equal effects in all conditions). It creates 2000 effects of each type for a total of 8000 effects.
+
+Set up the contrast matrix and the mash contrast data object
+```{r}
+L = rbind(c(-1,1,0,0,0,0,0,0),
+          c(-1,0,1,0,0,0,0,0),
+          c(-1,0,0,1,0,0,0,0),
+          c(-1,0,0,0,1,0,0,0),
+          c(-1,0,0,0,0,1,0,0),
+          c(-1,0,0,0,0,0,1,0),
+          c(-1,0,0,0,0,0,0,1))
+row.names(L) = c('2-1','3-1','4-1','5-1','6-1','7-1','8-1')
+mash_data = mash_set_data(Bhat=data$Chat, Shat=data$Shat)
+mash_data_L = mash_set_data_contrast(mash_data, L)
+```
+
+Set up the covariance matrices:
+
+```{r}
+U.c = cov_canonical(mash_data_L)
+```
+
+Fit `mashcontrast` model
+```{r}
+mashcontrast.model = mash(mash_data_L, U.c, algorithm.version = 'R')
+```
+
+Use `get_significant_results` to find the indices of effects that are “significant”:
+
+```{r}
+length(get_significant_results(mashcontrast.model))
+```
+
+```{r}
+barplot(get_estimated_pi(mashcontrast.model),las = 2)
+```
+
+```{r}
+print(get_loglik(mashcontrast.model),digits = 10)
+```
+
+# Comparing discover result with $\hat{\delta}_{j} \sim N_{7}(\delta_{j},I)$:
+
+```{r}
+Indep.data = mash_set_data(Bhat = data$Chat%*%t(L))
+U.c = cov_canonical(Indep.data)
+Indep.model = mash(Indep.data, U.c, algorithm.version = 'R')
+```
+```{r}
+length(get_significant_results(Indep.model))
+```
+```{r}
+barplot(get_estimated_pi(Indep.model),las = 2)
+```
+
+
+# Session information
+
+<!-- Insert the session information into the document -->
+```{r session-info}
+```

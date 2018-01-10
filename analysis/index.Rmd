@@ -6,4 +6,5 @@ output:
 ---
 
 * Simple simulation examples:
-    + Without signal: [simple contrast example](Simple.Contrast.Exp.html)
+    + Without signal: [simple contrast example](Simple.Contrast1.html)
+    + With signal: [simple contrast example2](Simple.Contrast2.html)
