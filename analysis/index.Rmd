@@ -8,3 +8,8 @@ output:
 * Simple simulation examples:
     + Without signal: [simple contrast example](Simple.Contrast1.html)
     + With signal: [simple contrast example2](Simple.Contrast2.html)
+    
+* The contrast matrix to subtract the mean:
+    + Without signal: [Compare with mean without signal](CompareMeanNonSignal.html)
+    + With signal: [Compare with mean with signal](CompareMeanSignal.html)
+
