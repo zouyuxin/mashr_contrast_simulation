@@ -61,7 +61,7 @@ $$L = \left(\begin{array}{c c c c}
 \vdots & \ddots & \ddots & \vdots \\
 -\frac{1}{R} & \cdots & \frac{R-1}{R} & -\frac{1}{R}
 \end{array} \right)_{R-1 \times R}$$
-There are only R-1 rows, intead of R. Since $c_{j,R}-\bar{c_{j}} = -\sum_{r=1}^{R-1} c_{j,r}-\bar{c_{j}}$.
+There are only R-1 rows, intead of R. Since $c_{j,R}-\bar{c_{j}} = -\sum_{r=1}^{R-1} (c_{j,r}-\bar{c_{j}})$.
 
 Therefore, $$\hat{\delta}_{j} = L\hat{c}_{j} \sim N_{R-1}(0, \frac{1}{2}LL')$$
 
