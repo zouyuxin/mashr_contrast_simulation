@@ -11,7 +11,7 @@
 
 <meta name="author" content="Yuxin Zou" />
 
-<meta name="date" content="2018-01-10" />
+<meta name="date" content="2018-01-11" />
 
 <title>Simulation with Signal Example</title>
 
@@ -312,89 +312,117 @@ div.section {
 
 <h1 class="title toc-ignore">Simulation with Signal Example</h1>
 <h4 class="author"><em>Yuxin Zou</em></h4>
-<h4 class="date"><em>2018-01-10</em></h4>
+<h4 class="date"><em>2018-01-11</em></h4>
 
 </div>
 
 
 <!-- Update knitr chunk options -->
 <!-- Insert the date the file was last updated -->
-<p><strong>Last updated:</strong> 2018-01-10</p>
+<p><strong>Last updated:</strong> 2018-01-11</p>
 <!-- Insert the R version (Git commit SHA1) if Git repository exists and R
  package git2r is installed -->
-<p>Loading the functions:</p>
-<pre class="r"><code>library(ashr)
-library(plyr)
-library(mvtnorm)
-library(assertthat)
-source(&#39;~/Documents/GitHub/mashr-zou/R/compute_covs.R&#39;)
-source(&#39;~/Documents/GitHub/mashr-zou/R/cov_udi.R&#39;)
-source(&#39;~/Documents/GitHub/mashr-zou/R/data2cov.R&#39;)
-source(&#39;~/Documents/GitHub/mashr-zou/R/ed.R&#39;)
-source(&#39;~/Documents/GitHub/mashr-zou/R/est_cor.R&#39;)
-source(&#39;~/Documents/GitHub/mashr-zou/R/get_functions.R&#39;)
-source(&#39;~/Documents/GitHub/mashr-zou/R/likelihoods_origdata.R&#39;)
-source(&#39;~/Documents/GitHub/mashr-zou/R/likelihoods_scaleddata.R&#39;)
-source(&#39;~/Documents/GitHub/mashr-zou/R/mash.R&#39;)
-source(&#39;~/Documents/GitHub/mashr-zou/R/opt.R&#39;)
-source(&#39;~/Documents/GitHub/mashr-zou/R/plots.R&#39;)
-source(&#39;~/Documents/GitHub/mashr-zou/R/posterior.R&#39;)
-source(&#39;~/Documents/GitHub/mashr-zou/R/posterior_common_cov.R&#39;)
-source(&#39;~/Documents/GitHub/mashr-zou/R/posterior_lowmem.R&#39;)
-source(&#39;~/Documents/GitHub/mashr-zou/R/RcppExports.R&#39;)
-source(&#39;~/Documents/GitHub/mashr-zou/R/set_data.R&#39;)
-source(&#39;~/Documents/GitHub/mashr-zou/R/simulations.R&#39;)</code></pre>
 <div id="simulation-design" class="section level1">
 <h1>Simulation Design</h1>
-<p>In the simulation, <span class="math display">\[c_{j2...8} = c_{j1} + \delta_{j}\]</span> <span class="math display">\[\hat{c}_{j} \sim N_{8}(c_{j}, \frac{1}{2}I)\]</span> Let L be the contrast matrix. Therefore, <span class="math display">\[\hat{\delta}_{j} = L\hat{c}_{j} \sim N_{7}(\delta_{j}, \frac{1}{2}LL&#39;)\]</span></p>
+<p>In the simulation, <span class="math display">\[c_{j2...R} = c_{j1} + \delta_{j}\]</span> <span class="math display">\[\hat{c}_{j}|c_{j} \sim N_{R}(c_{j}, \frac{1}{2}I)\]</span> Let L be the contrast matrix. Therefore, <span class="math display">\[\hat{\delta}_{j}|\delta_{j} = L\hat{c}_{j}|c_{j} \sim N_{R-1}(\delta_{j}, \frac{1}{2}LL&#39;)\]</span></p>
 <p>We first generate the data:</p>
-<pre class="r"><code>set.seed(1)
-data = sim2(nsamp = 2000, ncond = 8)</code></pre>
-<p>This simulation routine creates a dataset with 8 conditions, and four different types of deviations <span class="math inline">\(\delta_{j}\)</span>: null, independent among conditions, condition-specific in condition 2, and shared (equal effects in all conditions). It creates 2000 effects of each type for a total of 8000 effects.</p>
+<pre class="r"><code>set.seed(2018)
+data = sim2(nsamp = 21000, ncond = 8)</code></pre>
+<p>This simulation routine creates a dataset with 8 conditions, and four different types of deviations <span class="math inline">\(\delta_{j}\)</span>: null, independent among conditions, condition-specific in condition 2, and shared (equal effects in all conditions). The data contains 10% non-null effects <span class="math display">\[\delta_{j} \sim \frac{9}{10}N(0,0)+\frac{1}{30}N(0,I)+\frac{1}{30}N(0,11^{T})+\frac{1}{30}N(0,e_{1}e_{1}^{T})\]</span></p>
 <p>Set up the contrast matrix and the mash contrast data object</p>
-<pre class="r"><code>L = rbind(c(-1,1,0,0,0,0,0,0),
-          c(-1,0,1,0,0,0,0,0),
-          c(-1,0,0,1,0,0,0,0),
-          c(-1,0,0,0,1,0,0,0),
-          c(-1,0,0,0,0,1,0,0),
-          c(-1,0,0,0,0,0,1,0),
-          c(-1,0,0,0,0,0,0,1))
+<pre class="r"><code>R = 8
+L = diag(R-1)
+L = cbind(rep(-1, R-1), L)
 row.names(L) = c(&#39;2-1&#39;,&#39;3-1&#39;,&#39;4-1&#39;,&#39;5-1&#39;,&#39;6-1&#39;,&#39;7-1&#39;,&#39;8-1&#39;)
+
 mash_data = mash_set_data(Bhat=data$Chat, Shat=data$Shat)
 mash_data_L = mash_set_data_contrast(mash_data, L)</code></pre>
 <p>Set up the covariance matrices:</p>
-<pre class="r"><code>U.c = cov_canonical(mash_data_L)</code></pre>
+<pre class="r"><code># canonical
+U.c = cov_canonical(mash_data_L)
+# data driven
+m.1by1 = mash_1by1(mash_data_L, alpha=1)
+strong = get_significant_results(m.1by1,0.05)
+# only 5 strong samples
+
+# center Z
+# mash_data_L.center = mash_data_L
+# mash_data_L.center$Bhat = mash_data_L$Bhat/mash_data_L$BShat # obtain z
+# mash_data_L.center$BShat = matrix(1, nrow(mash_data_L$Bhat),ncol(mash_data_L$Bhat))
+# mash_data_L.center$Bhat = apply(mash_data_L.center$Bhat, 2, function(x) x - mean(x))
+# U.pca = cov_pca(mash_data_L.center,5,strong)
+# U.ed = cov_ed(mash_data_L.center, U.pca, strong)</code></pre>
 <p>Fit <code>mashcontrast</code> model</p>
 <pre class="r"><code>mashcontrast.model = mash(mash_data_L, U.c, algorithm.version = &#39;R&#39;)</code></pre>
-<pre><code> - Computing 8000 x 181 likelihood matrix.
- - Likelihood calculations took 0.92 seconds.
+<pre><code> - Computing 21000 x 181 likelihood matrix.
+ - Likelihood calculations took 1.83 seconds.
  - Fitting model with 181 mixture components.
- - Model fitting took 1.35 seconds.
+ - Model fitting took 4.59 seconds.
  - Computing posterior matrices.
- - Computation allocated took 0.16 seconds.</code></pre>
+ - Computation allocated took 0.21 seconds.</code></pre>
+<pre class="r"><code>print(get_loglik(mashcontrast.model),digits = 10)</code></pre>
+<pre><code>[1] -184139.2001</code></pre>
 <p>Use <code>get_significant_results</code> to find the indices of effects that are “significant”:</p>
 <pre class="r"><code>length(get_significant_results(mashcontrast.model))</code></pre>
-<pre><code>[1] 774</code></pre>
-<pre class="r"><code>barplot(get_estimated_pi(mashcontrast.model),las = 2)</code></pre>
-<p><img src="figure/Simple.Contrast2.Rmd/unnamed-chunk-8-1.png" width="672" style="display: block; margin: auto;" /></p>
-<pre class="r"><code>print(get_loglik(mashcontrast.model),digits = 10)</code></pre>
-<pre><code>[1] -79820.96994</code></pre>
+<pre><code>[1] 111</code></pre>
+<p>The number of false positive is 0.</p>
+<pre class="r"><code>barplot(get_estimated_pi(mashcontrast.model),las = 2,cex.names = 0.7)</code></pre>
+<p><img src="figure/Simple.Contrast2.Rmd/unnamed-chunk-8-1.png" width="672" style="display: block; margin: auto;" /> <!--
+The weights are mainly in the canonical matrices, as we expected. The data is generated using the canonical matrices.
+--></p>
 </div>
-<div id="comparing-discover-result-with-hatdelta_j-sim-n_7delta_ji" class="section level1">
-<h1>Comparing discover result with <span class="math inline">\(\hat{\delta}_{j} \sim N_{7}(\delta_{j},I)\)</span>:</h1>
+<div id="comparing-discovery-result-with-hatdelta_j-sim-n_7delta_ji" class="section level1">
+<h1>Comparing discovery result with <span class="math inline">\(\hat{\delta}_{j} \sim N_{7}(\delta_{j},I)\)</span>:</h1>
 <pre class="r"><code>Indep.data = mash_set_data(Bhat = data$Chat%*%t(L))
-U.c = cov_canonical(Indep.data)
 Indep.model = mash(Indep.data, U.c, algorithm.version = &#39;R&#39;)</code></pre>
-<pre><code> - Computing 8000 x 181 likelihood matrix.
- - Likelihood calculations took 0.65 seconds.
+<pre><code> - Computing 21000 x 181 likelihood matrix.
+ - Likelihood calculations took 1.50 seconds.
  - Fitting model with 181 mixture components.
- - Model fitting took 1.41 seconds.
+ - Model fitting took 5.36 seconds.
  - Computing posterior matrices.
- - Computation allocated took 0.09 seconds.</code></pre>
+ - Computation allocated took 0.14 seconds.</code></pre>
+<pre class="r"><code>print(get_loglik(Indep.model),digits = 10)</code></pre>
+<pre><code>[1] -194668.353</code></pre>
 <pre class="r"><code>length(get_significant_results(Indep.model))</code></pre>
-<pre><code>[1] 2745</code></pre>
-<pre class="r"><code>barplot(get_estimated_pi(Indep.model),las = 2)</code></pre>
-<p><img src="figure/Simple.Contrast2.Rmd/unnamed-chunk-12-1.png" width="672" style="display: block; margin: auto;" /></p>
+<pre><code>[1] 6349</code></pre>
+<p>There are more discoveries here, but lots of them are false discoveries. The number of false positive is 4774.</p>
+<pre class="r"><code>barplot(get_estimated_pi(Indep.model),las = 2, cex.names = 0.7)</code></pre>
+<p><img src="figure/Simple.Contrast2.Rmd/unnamed-chunk-11-1.png" width="672" style="display: block; margin: auto;" /></p>
+<!--
+We check the False Positive Rate and True Positive Rate. 
+$$FPR = \frac{|N\cap S|}{|N|} \quad TPR = \frac{|CS\cap S|}{|T|} $$
+
+
+
+
+```r
+# plot(Indep[,'FPR'], Indep[,'TPR'], xlab = 'FPR', ylab='TPR', type='l', xlim=c(0,0.8), ylim=c(0,0.6))
+# lines(mashcontrast[,'FPR'], mashcontrast[,'TPR'], col='red')
+```
+
+Or
+$$FPR = \frac{|S\cap N|}{|N|} \quad TPR = \frac{|S|}{|T|} $$
+
+```r
+delta = data$C %*% t(L)
+Tr = sum(apply(delta!=0, 1, max)) # number of lines with at least one non-zero effects
+N = nrow(delta) - Tr # number of lines with all zero effects
+
+thresh.seq = seq(0, 0.5, by=0.0005)[-1]
+mashcontrast = matrix(0,length(thresh.seq), 2)
+Indep = matrix(0,length(thresh.seq), 2)
+colnames(mashcontrast) = c('TPR', 'FPR')
+colnames(Indep) = c('TPR', 'FPR')
+
+for(t in 1:length(thresh.seq)){
+  mashcontrast[t,] = c(length(get_significant_results(mashcontrast.model, thresh = thresh.seq[t]))/Tr, sum(get_significant_results(mashcontrast.model, thresh = thresh.seq[t])<=16200)/N)
+  Indep[t,] = c(length(get_significant_results(Indep.model, thresh = thresh.seq[t]))/Tr, sum(get_significant_results(Indep.model, thresh = thresh.seq[t])<=16200)/N)
+}
+
+# plot(mashcontrast[,'FPR'], mashcontrast[,'TPR'], xlab = 'FPR', ylab='TPR', type='l')
+# lines(Indep[,'FPR'], Indep[,'TPR'], col='red')
+```
+-->
 </div>
 <div id="session-information" class="section level1">
 <h1>Session information</h1>
@@ -415,7 +443,7 @@ attached base packages:
 [1] stats     graphics  grDevices utils     datasets  methods   base     
 
 other attached packages:
-[1] assertthat_0.2.0 mvtnorm_1.0-6    plyr_1.8.4       ashr_2.1-27     
+[1] assertthat_0.2.0 mvtnorm_1.0-6    plyr_1.8.4       ashr_2.2-3      
 
 loaded via a namespace (and not attached):
  [1] Rcpp_0.12.14      knitr_1.17        magrittr_1.5     
