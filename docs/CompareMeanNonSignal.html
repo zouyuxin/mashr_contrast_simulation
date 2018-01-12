@@ -319,7 +319,7 @@ div.section {
 
 <!-- Update knitr chunk options -->
 <!-- Insert the date the file was last updated -->
-<p><strong>Last updated:</strong> 2018-01-11</p>
+<p><strong>Last updated:</strong> 2018-01-12</p>
 <!-- Insert the R version (Git commit SHA1) if Git repository exists and R
  package git2r is installed -->
 <div id="simulation-without-signal" class="section level1">
@@ -329,7 +329,7 @@ div.section {
 -\frac{1}{R} &amp; \frac{R-1}{R} &amp; \cdots &amp; -\frac{1}{R} \\
 \vdots &amp; \ddots &amp; \ddots &amp; \vdots \\
 -\frac{1}{R} &amp; \cdots &amp; \frac{R-1}{R} &amp; -\frac{1}{R}
-\end{array} \right)_{R-1 \times R}\]</span> There are only R-1 rows, intead of R. Since <span class="math inline">\(c_{j,R}-\bar{c_{j}} = -\sum_{r=1}^{R-1} c_{j,r}-\bar{c_{j}}\)</span>.</p>
+\end{array} \right)_{R-1 \times R}\]</span> There are only R-1 rows, intead of R. Since <span class="math inline">\(c_{j,R}-\bar{c_{j}} = -\sum_{r=1}^{R-1} (c_{j,r}-\bar{c_{j}})\)</span>.</p>
 <p>Therefore, <span class="math display">\[\hat{\delta}_{j} = L\hat{c}_{j} \sim N_{R-1}(0, \frac{1}{2}LL&#39;)\]</span></p>
 <p>We first generate the data:</p>
 <pre class="r"><code>set.seed(1)
@@ -353,11 +353,11 @@ mash_data_L = mash_set_data_contrast(mash_data, L)</code></pre>
 <p>Fit <code>mashcontrast</code> model</p>
 <pre class="r"><code>mashcontrast.model = mash(mash_data_L, U.c, algorithm.version = &#39;R&#39;)</code></pre>
 <pre><code> - Computing 10000 x 169 likelihood matrix.
- - Likelihood calculations took 1.01 seconds.
+ - Likelihood calculations took 1.15 seconds.
  - Fitting model with 169 mixture components.
- - Model fitting took 1.72 seconds.
+ - Model fitting took 2.06 seconds.
  - Computing posterior matrices.
- - Computation allocated took 0.07 seconds.</code></pre>
+ - Computation allocated took 0.09 seconds.</code></pre>
 <pre class="r"><code>length(get_significant_results(mashcontrast.model))</code></pre>
 <pre><code>[1] 0</code></pre>
 <p>There is no discovery, which is as we expected. The true deviations from mean are zero for all samples.</p>
@@ -372,9 +372,9 @@ mash_data_L = mash_set_data_contrast(mash_data, L)</code></pre>
 U.c = cov_canonical(mash_data_L)
 Indep.model = mash(Indep.data, U.c, algorithm.version = &#39;R&#39;)</code></pre>
 <pre><code> - Computing 10000 x 169 likelihood matrix.
- - Likelihood calculations took 0.71 seconds.
+ - Likelihood calculations took 0.76 seconds.
  - Fitting model with 169 mixture components.
- - Model fitting took 1.55 seconds.
+ - Model fitting took 1.62 seconds.
  - Computing posterior matrices.
  - Computation allocated took 0.04 seconds.</code></pre>
 <pre class="r"><code>length(get_significant_results(Indep.model))</code></pre>
@@ -403,7 +403,7 @@ attached base packages:
 [1] stats     graphics  grDevices utils     datasets  methods   base     
 
 other attached packages:
-[1] assertthat_0.2.0 mvtnorm_1.0-6    plyr_1.8.4       ashr_2.1-27     
+[1] assertthat_0.2.0 mvtnorm_1.0-6    plyr_1.8.4       ashr_2.2-3      
 
 loaded via a namespace (and not attached):
  [1] Rcpp_0.12.14      knitr_1.17        magrittr_1.5     
