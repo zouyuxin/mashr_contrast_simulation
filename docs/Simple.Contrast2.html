@@ -319,7 +319,7 @@ div.section {
 
 <!-- Update knitr chunk options -->
 <!-- Insert the date the file was last updated -->
-<p><strong>Last updated:</strong> 2018-01-11</p>
+<p><strong>Last updated:</strong> 2018-01-15</p>
 <!-- Insert the R version (Git commit SHA1) if Git repository exists and R
  package git2r is installed -->
 <div id="simulation-design" class="section level1">
@@ -355,11 +355,11 @@ strong = get_significant_results(m.1by1,0.05)
 <p>Fit <code>mashcontrast</code> model</p>
 <pre class="r"><code>mashcontrast.model = mash(mash_data_L, U.c, algorithm.version = &#39;R&#39;)</code></pre>
 <pre><code> - Computing 21000 x 181 likelihood matrix.
- - Likelihood calculations took 1.83 seconds.
+ - Likelihood calculations took 1.67 seconds.
  - Fitting model with 181 mixture components.
- - Model fitting took 4.59 seconds.
+ - Model fitting took 4.57 seconds.
  - Computing posterior matrices.
- - Computation allocated took 0.21 seconds.</code></pre>
+ - Computation allocated took 0.22 seconds.</code></pre>
 <pre class="r"><code>print(get_loglik(mashcontrast.model),digits = 10)</code></pre>
 <pre><code>[1] -184139.2001</code></pre>
 <p>Use <code>get_significant_results</code> to find the indices of effects that are “significant”:</p>
@@ -376,30 +376,22 @@ The weights are mainly in the canonical matrices, as we expected. The data is ge
 <pre class="r"><code>Indep.data = mash_set_data(Bhat = data$Chat%*%t(L))
 Indep.model = mash(Indep.data, U.c, algorithm.version = &#39;R&#39;)</code></pre>
 <pre><code> - Computing 21000 x 181 likelihood matrix.
- - Likelihood calculations took 1.50 seconds.
+ - Likelihood calculations took 1.47 seconds.
  - Fitting model with 181 mixture components.
- - Model fitting took 5.36 seconds.
+ - Model fitting took 5.04 seconds.
  - Computing posterior matrices.
  - Computation allocated took 0.14 seconds.</code></pre>
 <pre class="r"><code>print(get_loglik(Indep.model),digits = 10)</code></pre>
 <pre><code>[1] -194668.353</code></pre>
 <pre class="r"><code>length(get_significant_results(Indep.model))</code></pre>
 <pre><code>[1] 6349</code></pre>
-<p>There are more discoveries here, but lots of them are false discoveries. The number of false positive is 4774.</p>
+<p>There are more discoveries here, but lots of them are false discoveries. The number of false positive is 5549.</p>
 <pre class="r"><code>barplot(get_estimated_pi(Indep.model),las = 2, cex.names = 0.7)</code></pre>
 <p><img src="figure/Simple.Contrast2.Rmd/unnamed-chunk-11-1.png" width="672" style="display: block; margin: auto;" /></p>
+<p>The RRMSE plot: <img src="figure/Simple.Contrast2.Rmd/unnamed-chunk-12-1.png" width="672" style="display: block; margin: auto;" /></p>
+<p>We check the False Positive Rate and True Positive Rate. <span class="math display">\[FPR = \frac{|N\cap S|}{|N|} \quad TPR = \frac{|CS\cap S|}{|T|} \]</span></p>
+<p><img src="figure/Simple.Contrast2.Rmd/unnamed-chunk-14-1.png" width="672" style="display: block; margin: auto;" /></p>
 <!--
-We check the False Positive Rate and True Positive Rate. 
-$$FPR = \frac{|N\cap S|}{|N|} \quad TPR = \frac{|CS\cap S|}{|T|} $$
-
-
-
-
-```r
-# plot(Indep[,'FPR'], Indep[,'TPR'], xlab = 'FPR', ylab='TPR', type='l', xlim=c(0,0.8), ylim=c(0,0.6))
-# lines(mashcontrast[,'FPR'], mashcontrast[,'TPR'], col='red')
-```
-
 Or
 $$FPR = \frac{|S\cap N|}{|N|} \quad TPR = \frac{|S|}{|T|} $$
 
