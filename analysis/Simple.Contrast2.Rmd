@@ -48,7 +48,7 @@ source('~/Documents/GitHub/mashr-zou/R/posterior_common_cov.R')
 source('~/Documents/GitHub/mashr-zou/R/posterior_lowmem.R')
 source('~/Documents/GitHub/mashr-zou/R/RcppExports.R')
 source('~/Documents/GitHub/mashr-zou/R/set_data.R')
-source('~/Documents/GitHub/mashr-zou/R/simulations.R')
+source('~/Documents/GitHub/mashr-zou/R/simulations_contrast.R')
 ```
 
 # Simulation Design
