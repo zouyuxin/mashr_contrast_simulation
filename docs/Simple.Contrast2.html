@@ -355,9 +355,9 @@ strong = get_significant_results(m.1by1,0.05)
 <p>Fit <code>mashcontrast</code> model</p>
 <pre class="r"><code>mashcontrast.model = mash(mash_data_L, U.c, algorithm.version = &#39;R&#39;)</code></pre>
 <pre><code> - Computing 21000 x 181 likelihood matrix.
- - Likelihood calculations took 1.67 seconds.
+ - Likelihood calculations took 1.73 seconds.
  - Fitting model with 181 mixture components.
- - Model fitting took 4.57 seconds.
+ - Model fitting took 4.66 seconds.
  - Computing posterior matrices.
  - Computation allocated took 0.22 seconds.</code></pre>
 <pre class="r"><code>print(get_loglik(mashcontrast.model),digits = 10)</code></pre>
@@ -376,9 +376,9 @@ The weights are mainly in the canonical matrices, as we expected. The data is ge
 <pre class="r"><code>Indep.data = mash_set_data(Bhat = data$Chat%*%t(L))
 Indep.model = mash(Indep.data, U.c, algorithm.version = &#39;R&#39;)</code></pre>
 <pre><code> - Computing 21000 x 181 likelihood matrix.
- - Likelihood calculations took 1.47 seconds.
+ - Likelihood calculations took 1.52 seconds.
  - Fitting model with 181 mixture components.
- - Model fitting took 5.04 seconds.
+ - Model fitting took 4.97 seconds.
  - Computing posterior matrices.
  - Computation allocated took 0.14 seconds.</code></pre>
 <pre class="r"><code>print(get_loglik(Indep.model),digits = 10)</code></pre>
