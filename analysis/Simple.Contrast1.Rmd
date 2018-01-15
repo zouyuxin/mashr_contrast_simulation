@@ -28,8 +28,6 @@ knitr::read_chunk("chunks.R")
 knitr::opts_chunk$set(eval = TRUE)
 ```
 
-Loading the functions:
-
 ```{r, echo=FALSE}
 library(ashr)
 library(plyr)
@@ -51,7 +49,7 @@ source('~/Documents/GitHub/mashr-zou/R/posterior_common_cov.R')
 source('~/Documents/GitHub/mashr-zou/R/posterior_lowmem.R')
 source('~/Documents/GitHub/mashr-zou/R/RcppExports.R')
 source('~/Documents/GitHub/mashr-zou/R/set_data.R')
-source('~/Documents/GitHub/mashr-zou/R/simulations.R')
+source('~/Documents/GitHub/mashr-zou/R/simulations_contrast.R')
 ```
 
 # Simulation Design
