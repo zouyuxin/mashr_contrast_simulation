@@ -226,6 +226,11 @@ div.section {
 <li>Without signal: <a href="CompareMeanNonSignal.html">Compare with mean without signal</a></li>
 <li>With signal: <a href="CompareMeanSignal.html">Compare with mean with signal</a></li>
 </ul></li>
+<li><p>Outlier There are two kinds of outlier problem in <code>mash</code>.</p>
+<ul>
+<li><p>The first one is that the covariance matrices used to fit the <code>mash</code> model are not enough. The correct covariance matrices are not included in the <code>mash</code> model.</p></li>
+<li><p>The other one happened when we want to apply the fitted <code>mash</code> model on a new dataset. The new data contains covariance structures that not currently coverred in the fitted model. <a href="Outlier_sim.html">Outlier</a></p></li>
+</ul></li>
 </ul>
 
 <!-- Adjust MathJax settings so that all math formulae are shown using
