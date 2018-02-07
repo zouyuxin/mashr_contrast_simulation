@@ -1,0 +1,169 @@
+---
+title: "Outlier Simulation"
+author: "Yuxin Zou"
+date: 2018-1-23
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r read-chunk, include=FALSE, cache=FALSE}
+knitr::read_chunk("chunks.R")
+```
+
+<!-- Update knitr chunk options -->
+```{r knitr-opts-chunk, include=FALSE}
+```
+
+<!-- Insert the date the file was last updated -->
+```{r last-updated, echo=FALSE, results='asis'}
+```
+
+<!-- Insert the R version (Git commit SHA1) if Git repository exists and R
+ package git2r is installed -->
+```{r R-version, echo=FALSE, results='asis'}
+```
+
+```{r, echo=FALSE}
+# TEMPORARY.
+knitr::opts_chunk$set(eval = TRUE)
+```
+
+```{r echo=FALSE}
+library(mvtnorm); library(mashr)
+```
+
+# Generate data
+
+$$\left(\begin{array}{c} \hat{\beta}_{j1} \\ \hat{\beta}_{j2} \end{array} \right) | \left(\begin{array}{c} \beta_{j1} \\ \beta_{j2}\end{array} \right) \sim N(\left(\begin{array}{c} \beta_{j1} \\ \beta_{j2}\end{array} \right), \left( \begin{array}{c c} 0.05^2 & 0 \\
+0 & 0.05^2 \end{array} \right)) $$
+$$\left(\begin{array}{c} \beta_{j1} \\ \beta_{j2}\end{array} \right) \sim \frac{1}{2} \delta_{0} + \frac{1}{2}N(0, \left( \begin{array}{c c} 1 & 1 \\
+1 & 1 \end{array} \right))$$
+
+```{r echo=FALSE}
+set.seed(10)
+nsamp = 500
+
+B.0 = matrix(0,nsamp,2)
+b = rnorm(nsamp)
+B.1 = cbind(b, b)
+
+B = rbind(B.0, B.1)
+colnames(B) = c('x','y')
+
+# Add error
+Shat = matrix(0.05, nrow = nrow(B), ncol = ncol(B))
+E = matrix(rnorm(length(Shat), mean = 0, sd = Shat), nrow = nrow(B),
+             ncol = ncol(B))
+Bhat = B + E
+
+{plot(Bhat[1:1000,1], Bhat[1:1000,2], xlim=range(Bhat[,1]), ylim=range(Bhat[,2]), xlab = 'x', ylab='y')
+}
+```
+
+Fit `mash` model:
+```{r echo=FALSE}
+mash_data = mash_set_data(Bhat = Bhat, Shat = Shat)
+U.c = cov_canonical(mash_data, cov_methods = 'equal_effects')
+mash.model = mash(mash_data, U.c)
+barplot(get_estimated_pi(mash.model), las=2, cex.names = 0.7)
+```
+The identified covariance structures are correct.
+
+We simulate a new dataset.
+$$\left(\begin{array}{c} \hat{\beta}_{j1} \\ \hat{\beta}_{j2} \end{array} \right) | \left(\begin{array}{c} \beta_{j1} \\ \beta_{j2}\end{array} \right) \sim N(\left(\begin{array}{c} \beta_{j1} \\ \beta_{j2}\end{array} \right), \left( \begin{array}{c c} 0.05^2 & 0 \\
+0 & 0.05^2 \end{array} \right)) $$
+$$\left(\begin{array}{c} \beta_{j1} \\ \beta_{j2}\end{array} \right) \sim \frac{1}{3} \delta_{0} + \frac{1}{3}N(0, \left( \begin{array}{c c} 1 & 1 \\
+1 & 1 \end{array} \right)) + \frac{1}{3}N(0, \left( \begin{array}{c c} 1 & -1 \\
+-1 & 1 \end{array} \right))$$
+
+```{r}
+set.seed(20)
+nsamp = 500
+
+B.0 = matrix(0,nsamp,2)
+b = rnorm(nsamp)
+B.1 = cbind(b, b)
+b.out = rnorm(nsamp)
+B.outlier = cbind(b.out, -b.out)
+
+B = rbind(B.0, B.1, B.outlier)
+colnames(B) = c('x','y')
+
+# Add error
+Shat = matrix(0.05, nrow = nrow(B), ncol = ncol(B))
+E = matrix(rnorm(length(Shat), mean = 0, sd = Shat), nrow = nrow(B),
+             ncol = ncol(B))
+Bhat = B + E
+
+{plot(Bhat[1:1000,1], Bhat[1:1000,2], xlim=range(Bhat[,1]), ylim=range(Bhat[,2]), xlab = 'x', ylab='y')
+points(Bhat[1001:1500,1], Bhat[1001:1500,2], col='red')
+}
+```
+
+If we apply the `mash` model on this new data:
+
+```{r}
+mash.data.o = mash_set_data(Bhat = Bhat, Shat=Shat)
+mash.model.o = mash.model
+mash.model.o$result = mash_compute_posterior_matrices(mash.model, mash.data.o)
+length(get_significant_results(mash.model.o))
+```
+
+```{r}
+{plot(mash.model.o$result$PosteriorMean[1:1000,1], mash.model.o$result$PosteriorMean[1:1000,2])
+points(mash.model.o$result$PosteriorMean[1001:1500,1], mash.model.o$result$PosteriorMean[1001:1500,2], col='red')}
+```
+The outlier points are all shrinkaged close to 0. Using this approach, we completely ignore the addition the covariance structure in the new dataset.
+
+We want to identify these points before using `mash` model.
+
+# Identify outlier
+
+We can get the loglikehood of the data under the fitted `mash` model:
+```{r}
+loglik = mash_compute_vloglik(mash.model, mash.data.o)
+hist(loglik)
+which(loglik < -1000)
+```
+
+
+Firstly, we decompose $\Sigma$ using eigenvalue decomposition, $\Sigma = QDQ'$
+
+```{r}
+Sigma = matrix(c(1+0.05^2,1,1,1+0.05^2),2,2)
+eigen.sigma = eigen(Sigma)
+```
+
+We can transform the $\Sigma$ to identity matrix, $D^{-1/2}Q' \Sigma = I$.
+
+We apply this transfermation on (x y)'.
+
+```{r}
+Bhat.tran = t(t(Bhat %*% eigen.sigma$vectors) * eigen.sigma$values^{-0.5})
+```
+
+```{r echo=FALSE}
+{plot(Bhat.tran[1:1000,1], Bhat.tran[1:1000,2], xlim=range(Bhat.tran[,1]), ylim=range(Bhat.tran[,2]), xlab = 'x', ylab='y')
+points(Bhat.tran[1001:1500, 1], Bhat.tran[1001:1500,2], col='red')}
+```
+
+```{r}
+M.dist = numeric(3*nsamp)
+for(i in 1:(3*nsamp)){
+  M.dist[i] = t(Bhat[i,]) %*% solve(rbind(c(1+0.05^2, 1),c(1, 1+0.05^2))) %*% Bhat[i,]
+}
+
+{qqplot(qchisq(ppoints(1500), df = 2), M.dist,
+       main = expression("Q-Q plot for" ~~ {chi^2}[2]))
+qqline(M.dist, distribution = function(p) qchisq(p, df = 2),
+       prob = c(0.1, 0.6), col = 2)}
+```
+
+# Session information
+
+<!-- Insert the session information into the document -->
+```{r session-info}
+```

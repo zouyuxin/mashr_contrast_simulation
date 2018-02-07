@@ -12,4 +12,11 @@ output:
 * The contrast matrix to subtract the mean:
     + Without signal: [Compare with mean without signal](CompareMeanNonSignal.html)
     + With signal: [Compare with mean with signal](CompareMeanSignal.html)
+    
+* Outlier 
+    There are two kinds of outlier problem in `mash`. 
+
+    + The first one is that the covariance matrices used to fit the `mash` model are not enough. The correct covariance matrices are not included in the `mash` model.
+
+    + The other one happened when we want to apply the fitted `mash` model on a new dataset. The new data contains covariance structures that not currently coverred in the fitted model. [Outlier](Outlier_sim.html)
 
