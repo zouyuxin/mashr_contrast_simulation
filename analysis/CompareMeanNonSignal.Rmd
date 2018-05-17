@@ -18,7 +18,7 @@ knitr::read_chunk("chunks.R")
 
 <!-- Insert the R version (Git commit SHA1) if Git repository exists and R
  package git2r is installed -->
-```{r R-version, echo=FALSE, results='asis'}
+```{r code-version, echo=FALSE, results='asis'}
 ```
 
 ```{r, echo=FALSE}
@@ -27,27 +27,7 @@ knitr::opts_chunk$set(eval = TRUE)
 ```
 
 ```{r, echo=FALSE}
-library(ashr)
-library(plyr)
-library(mvtnorm)
-library(assertthat)
-source('~/Documents/GitHub/mashr-zou/R/compute_covs.R')
-source('~/Documents/GitHub/mashr-zou/R/cov_udi.R')
-source('~/Documents/GitHub/mashr-zou/R/data2cov.R')
-source('~/Documents/GitHub/mashr-zou/R/ed.R')
-source('~/Documents/GitHub/mashr-zou/R/est_cor.R')
-source('~/Documents/GitHub/mashr-zou/R/get_functions.R')
-source('~/Documents/GitHub/mashr-zou/R/likelihoods_origdata.R')
-source('~/Documents/GitHub/mashr-zou/R/likelihoods_scaleddata.R')
-source('~/Documents/GitHub/mashr-zou/R/mash.R')
-source('~/Documents/GitHub/mashr-zou/R/opt.R')
-source('~/Documents/GitHub/mashr-zou/R/plots.R')
-source('~/Documents/GitHub/mashr-zou/R/posterior.R')
-source('~/Documents/GitHub/mashr-zou/R/posterior_common_cov.R')
-source('~/Documents/GitHub/mashr-zou/R/posterior_lowmem.R')
-source('~/Documents/GitHub/mashr-zou/R/RcppExports.R')
-source('~/Documents/GitHub/mashr-zou/R/set_data.R')
-source('~/Documents/GitHub/mashr-zou/R/simulations.R')
+library(mashr)
 ```
 
 # Simulation without signal
@@ -68,7 +48,7 @@ Therefore, $$\hat{\delta}_{j} = L\hat{c}_{j} \sim N_{R-1}(0, \frac{1}{2}LL')$$
 We first generate the data:
 ```{r}
 set.seed(1)
-data = sim(nsamp = 10000, ncond = 8)
+data = sim_contrast1(nsamp = 10000, ncond = 8)
 ```
 
 # Mash contrast model
@@ -104,16 +84,16 @@ length(get_significant_results(mashcontrast.model))
 There is no discovery, which is as we expected. The true deviations from mean are zero for all samples.
 
 ```{r}
-barplot(get_estimated_pi(mashcontrast.model),las = 2)
+barplot(get_estimated_pi(mashcontrast.model),las = 2, cex.names = 0.7)
 ```
 
 # Subtract mean directly
 
 If we subtract the mean from the data directly, ignoring the correlation structure.
-$$Var(\hat{c}_{j,r}-\bar{\hat{c}_{j}}) = \frac{1}{2} + \frac{1}{2R}$$
+$$Var(\hat{c}_{j,r}-\bar{\hat{c}_{j}}) = \frac{1}{2} - \frac{1}{2R}$$
 ```{r}
 Indep.data = mash_set_data(Bhat = (data$Chat - apply(data$Chat,1, mean))[,1:7],
-                           Shat = matrix(sqrt(0.5+1/(8*2)), nrow(data$Chat), ncol(data$Chat)-1))
+                           Shat = matrix(sqrt(0.5-1/(8*2)), nrow(data$Chat), ncol(data$Chat)-1))
 U.c = cov_canonical(mash_data_L)
 Indep.model = mash(Indep.data, U.c, algorithm.version = 'R')
 ```
