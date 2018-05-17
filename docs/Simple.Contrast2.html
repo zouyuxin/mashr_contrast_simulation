@@ -320,8 +320,8 @@ div.section {
 <!-- Update knitr chunk options -->
 <!-- Insert the date the file was last updated -->
 <p><strong>Last updated:</strong> 2018-05-17</p>
-<!-- Insert the R version (Git commit SHA1) if Git repository exists and R
- package git2r is installed -->
+<p><strong>Code version:</strong> 84145da</p>
+<pre class="r"><code>library(mashr)</code></pre>
 <pre><code>Loading required package: ashr</code></pre>
 <div id="simulation-design" class="section level1">
 <h1>Simulation Design</h1>
@@ -344,23 +344,15 @@ U.c = cov_canonical(mash_data_L)
 # data driven
 m.1by1 = mash_1by1(mash_data_L, alpha=0)
 strong = get_significant_results(m.1by1,0.05)
-# only 1 strong samples
-
-# center Z
-# mash_data_L.center = mash_data_L
-# mash_data_L.center$Bhat = mash_data_L$Bhat/mash_data_L$BShat # obtain z
-# mash_data_L.center$BShat = matrix(1, nrow(mash_data_L$Bhat),ncol(mash_data_L$Bhat))
-# mash_data_L.center$Bhat = apply(mash_data_L.center$Bhat, 2, function(x) x - mean(x))
-# U.pca = cov_pca(mash_data_L.center,5,strong)
-# U.ed = cov_ed(mash_data_L.center, U.pca, strong)</code></pre>
+# only 1 strong samples</code></pre>
 <p>Fit <code>mashcontrast</code> model</p>
 <pre class="r"><code>mashcontrast.model = mash(mash_data_L, U.c, algorithm.version = &#39;R&#39;)</code></pre>
 <pre><code> - Computing 12000 x 181 likelihood matrix.
- - Likelihood calculations took 0.94 seconds.
+ - Likelihood calculations took 1.01 seconds.
  - Fitting model with 181 mixture components.
- - Model fitting took 2.08 seconds.
+ - Model fitting took 2.22 seconds.
  - Computing posterior matrices.
- - Computation allocated took 0.58 seconds.</code></pre>
+ - Computation allocated took 0.59 seconds.</code></pre>
 <pre class="r"><code>print(get_loglik(mashcontrast.model),digits = 10)</code></pre>
 <pre><code>[1] -105519.4856</code></pre>
 <p>Use <code>get_significant_results</code> to find the indices of effects that are “significant”:</p>
@@ -368,30 +360,80 @@ strong = get_significant_results(m.1by1,0.05)
 <pre><code>[1] 68</code></pre>
 <p>The number of false positive is 1.</p>
 <pre class="r"><code>barplot(get_estimated_pi(mashcontrast.model),las = 2,cex.names = 0.7)</code></pre>
-<p><img src="figure/Simple.Contrast2.Rmd/unnamed-chunk-8-1.png" width="672" style="display: block; margin: auto;" /></p>
+<p><img src="figure/Simple.Contrast2.Rmd/unnamed-chunk-7-1.png" width="672" style="display: block; margin: auto;" /></p>
 </div>
 <div id="comparing-discovery-result-with-hatdelta_j-sim-n_7delta_ji" class="section level1">
 <h1>Comparing discovery result with <span class="math inline">\(\hat{\delta}_{j} \sim N_{7}(\delta_{j},I)\)</span>:</h1>
 <pre class="r"><code>Indep.data = mash_set_data(Bhat = mash_data_L$Bhat)
 Indep.model = mash(Indep.data, U.c)</code></pre>
 <pre><code> - Computing 12000 x 181 likelihood matrix.
- - Likelihood calculations took 0.25 seconds.
+ - Likelihood calculations took 0.24 seconds.
  - Fitting model with 181 mixture components.
- - Model fitting took 2.30 seconds.
+ - Model fitting took 2.42 seconds.
  - Computing posterior matrices.
- - Computation allocated took 0.09 seconds.</code></pre>
+ - Computation allocated took 0.07 seconds.</code></pre>
 <pre class="r"><code>print(get_loglik(Indep.model),digits = 10)</code></pre>
 <pre><code>[1] -111502.5605</code></pre>
 <pre class="r"><code>length(get_significant_results(Indep.model))</code></pre>
 <pre><code>[1] 3765</code></pre>
 <p>There are more discoveries here, but lots of them are false discoveries. The number of false positive is 3295.</p>
 <pre class="r"><code>barplot(get_estimated_pi(Indep.model),las = 2, cex.names = 0.7)</code></pre>
+<p><img src="figure/Simple.Contrast2.Rmd/unnamed-chunk-10-1.png" width="672" style="display: block; margin: auto;" /></p>
+<p>The RRMSE plot:</p>
+<pre class="r"><code>delta = data$C %*% t(L)
+barplot(c(sqrt(mean((delta - m.1by1$result$PosteriorMean)^2)/mean((delta - data$Chat%*%t(L))^2)), sqrt(mean((delta - mashcontrast.model$result$PosteriorMean)^2)/mean((delta - data$Chat%*%t(L))^2)), sqrt(mean((delta - Indep.model$result$PosteriorMean)^2)/mean((delta - data$Chat%*%t(L))^2))), ylim=c(0,0.8), names.arg = c(&#39;ash&#39;,&#39;mashcommonbaseline&#39;, &#39;mashIndep&#39;), ylab=&#39;RRMSE&#39;)</code></pre>
 <p><img src="figure/Simple.Contrast2.Rmd/unnamed-chunk-11-1.png" width="672" style="display: block; margin: auto;" /></p>
-<p>The RRMSE plot: <img src="figure/Simple.Contrast2.Rmd/unnamed-chunk-12-1.png" width="672" style="display: block; margin: auto;" /></p>
 <p>We check the False Positive Rate and True Positive Rate. <span class="math display">\[FPR = \frac{|N\cap S|}{|N|} \quad TPR = \frac{|CS\cap S|}{|T|} \]</span></p>
-<p><img src="figure/Simple.Contrast2.Rmd/unnamed-chunk-14-1.png" width="672" style="display: block; margin: auto;" /></p>
-<p><img src="figure/Simple.Contrast2.Rmd/unnamed-chunk-16-1.png" width="672" style="display: block; margin: auto;" /></p>
-<pre class="r"><code>thresh.seq = seq(0, 1, by=0.001)[-1]
+<p>Each effect is treated as a separate discovery in each condition</p>
+<pre class="r"><code>delta = data$C %*% t(L)
+
+sign.test.mash = as.matrix(delta)*mashcontrast.model$result$PosteriorMean
+sign.test.Indep = as.matrix(delta)*Indep.model$result$PosteriorMean
+sign.test.ash = as.matrix(delta)*m.1by1$result$PosteriorMean
+
+thresh.seq = seq(0, 1, by=0.00005)[-1]
+mashcontrast = matrix(0,length(thresh.seq), 2)
+Indep = matrix(0,length(thresh.seq), 2)
+Ash = matrix(0,length(thresh.seq), 2)
+colnames(mashcontrast) = colnames(Indep) = colnames(Ash) = c(&#39;TPR&#39;, &#39;FPR&#39;)
+
+for(t in 1:length(thresh.seq)){
+  mashcontrast[t,] = c( sum(sign.test.mash&gt;0 &amp; mashcontrast.model$result$lfsr &lt;= thresh.seq[t])/sum(delta!=0), sum(delta==0 &amp; mashcontrast.model$result$lfsr &lt;=thresh.seq[t])/sum(delta==0))
+  
+  Indep[t,] = c(sum(sign.test.Indep&gt;0&amp; Indep.model$result$lfsr &lt;=thresh.seq[t])/sum(delta!=0),  sum(delta==0&amp; Indep.model$result$lfsr &lt;=thresh.seq[t])/sum(delta==0))
+  
+  Ash[t,] = c(sum(sign.test.ash&gt;0&amp; m.1by1$result$lfsr &lt;=thresh.seq[t])/sum(delta!=0),  sum(delta==0&amp; m.1by1$result$lfsr &lt;=thresh.seq[t])/sum(delta==0))
+}</code></pre>
+<pre class="r"><code>{plot(mashcontrast[,&#39;FPR&#39;], mashcontrast[,&#39;TPR&#39;], col=&#39;red&#39;,type=&#39;l&#39;,ylab=&quot;True Positive Rate&quot;,xlab=&quot;False Positive Rate&quot;)
+lines(Indep[,&#39;FPR&#39;], Indep[,&#39;TPR&#39;])
+lines(Ash[,&#39;FPR&#39;], Ash[,&#39;TPR&#39;], col=&#39;green&#39;)
+legend(&#39;bottomright&#39;, c(&#39;mashcommonbaseline&#39;, &#39;mashIndep&#39;, &#39;ash&#39;),col=c(&#39;red&#39;,&#39;black&#39;,&#39;green&#39;),lty=c(1,1,1))
+}</code></pre>
+<p><img src="figure/Simple.Contrast2.Rmd/unnamed-chunk-13-1.png" width="672" style="display: block; margin: auto;" /></p>
+<p>Each effect is treated as a single discovery across all conditions</p>
+<pre class="r"><code>delta = data$C %*% t(L)
+
+thresh.seq = seq(0, 1, by=0.001)[-1]
+mashcontrast = matrix(0,length(thresh.seq), 2)
+Indep = matrix(0,length(thresh.seq), 2)
+Ash = matrix(0,length(thresh.seq), 2)
+colnames(mashcontrast) = colnames(Indep) = colnames(Ash) = c(&#39;TPR&#39;, &#39;FPR&#39;)
+
+for(t in 1:length(thresh.seq)){
+  mashcontrast[t,] = c( sum(get_significant_results(mashcontrast.model, thresh.seq[t]) &gt; 10800)/1200, sum(get_significant_results(mashcontrast.model, thresh.seq[t]) &lt;= 10800)/10800)
+  
+  Indep[t,] = c( sum(get_significant_results(Indep.model, thresh.seq[t]) &gt; 10800)/1200, sum(get_significant_results(Indep.model, thresh.seq[t]) &lt;= 10800)/10800)
+  
+  Ash[t,] = c( sum(get_significant_results(m.1by1, thresh.seq[t])&gt;10800)/1200, sum(get_significant_results(m.1by1, thresh.seq[t]) &lt;= 10800)/10800)
+}</code></pre>
+<pre class="r"><code>{plot(mashcontrast[,&#39;FPR&#39;], mashcontrast[,&#39;TPR&#39;], col=&#39;red&#39;,type=&#39;l&#39;,ylab=&quot;True Positive Rate&quot;,xlab=&quot;False Positive Rate&quot;)
+lines(Indep[,&#39;FPR&#39;], Indep[,&#39;TPR&#39;])
+lines(Ash[,&#39;FPR&#39;], Ash[,&#39;TPR&#39;], col=&#39;green&#39;)
+legend(&#39;bottomright&#39;, c(&#39;mashcommonbaseline&#39;, &#39;mashIndep&#39;, &#39;ash&#39;),col=c(&#39;red&#39;,&#39;black&#39;,&#39;green&#39;),lty=c(1,1,1))
+}</code></pre>
+<p><img src="figure/Simple.Contrast2.Rmd/unnamed-chunk-15-1.png" width="672" style="display: block; margin: auto;" /></p>
+<p>lfsr:</p>
+<pre class="r"><code>thresh.seq = seq(0, 0.5, by=0.001)[-1]
 mashcontrast = Indep = Ash = numeric(length(thresh.seq))
 
 sign.test.mash = as.matrix(delta)*mashcontrast.model$result$PosteriorMean
@@ -400,20 +442,20 @@ sign.test.ash = as.matrix(delta)*m.1by1$result$PosteriorMean
 
 for(t in 1:length(thresh.seq)){
   sig = mashcontrast.model$result$lfsr &lt;= thresh.seq[t]
-  mashcontrast[t] = sum(delta==0 &amp; sig)/sum(sig)
+  mashcontrast[t] = sum(sign.test.mash&lt;=0 &amp; sig)/sum(sig)
   
   sig = Indep.model$result$lfsr &lt;= thresh.seq[t]
-  Indep[t] = sum(delta==0 &amp; sig)/sum(sig)
+  Indep[t] = sum(sign.test.Indep&lt;=0 &amp; sig)/sum(sig)
   
   sig = m.1by1$result$lfsr &lt;= thresh.seq[t]
-  Ash[t] = sum(delta==0 &amp; sig)/sum(sig)
+  Ash[t] = sum(sign.test.ash&lt;=0 &amp; sig)/sum(sig)
 }</code></pre>
-<pre class="r"><code>{plot(thresh.seq, mashcontrast, type=&#39;l&#39;, col=&#39;red&#39;, ylab=&#39;fdr&#39;)
+<pre class="r"><code>{plot(thresh.seq, mashcontrast, type=&#39;l&#39;, col=&#39;red&#39;, ylab=&#39;fsr&#39;, ylim=c(0,0.5))
 lines(thresh.seq, Indep, col=&#39;blue&#39;)
 lines(thresh.seq, Ash, col=&#39;green&#39;)
 lines(thresh.seq, thresh.seq)
 }</code></pre>
-<p><img src="figure/Simple.Contrast2.Rmd/unnamed-chunk-18-1.png" width="672" style="display: block; margin: auto;" /></p>
+<p><img src="figure/Simple.Contrast2.Rmd/unnamed-chunk-17-1.png" width="672" style="display: block; margin: auto;" /></p>
 </div>
 <div id="session-information" class="section level1">
 <h1>Session information</h1>
@@ -442,12 +484,12 @@ loaded via a namespace (and not attached):
  [7] pscl_1.5.2        SQUAREM_2017.10-1 lattice_0.20-35  
 [10] foreach_1.4.4     plyr_1.8.4        stringr_1.3.0    
 [13] tools_3.4.4       parallel_3.4.4    grid_3.4.4       
-[16] rmeta_3.0         htmltools_0.3.6   iterators_1.0.9  
-[19] assertthat_0.2.0  yaml_2.1.19       rprojroot_1.3-2  
-[22] digest_0.6.15     Matrix_1.2-14     codetools_0.2-15 
-[25] evaluate_0.10.1   rmarkdown_1.9     stringi_1.2.2    
-[28] compiler_3.4.4    Rmosek_8.0.69     backports_1.1.2  
-[31] mvtnorm_1.0-7     truncnorm_1.0-8  </code></pre>
+[16] rmeta_3.0         git2r_0.21.0      htmltools_0.3.6  
+[19] iterators_1.0.9   assertthat_0.2.0  yaml_2.1.19      
+[22] rprojroot_1.3-2   digest_0.6.15     Matrix_1.2-14    
+[25] codetools_0.2-15  evaluate_0.10.1   rmarkdown_1.9    
+[28] stringi_1.2.2     compiler_3.4.4    Rmosek_8.0.69    
+[31] backports_1.1.2   mvtnorm_1.0-7     truncnorm_1.0-8  </code></pre>
 </div>
 
 <!-- Adjust MathJax settings so that all math formulae are shown using
