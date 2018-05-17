@@ -319,9 +319,11 @@ div.section {
 
 <!-- Update knitr chunk options -->
 <!-- Insert the date the file was last updated -->
-<p><strong>Last updated:</strong> 2018-01-12</p>
+<p><strong>Last updated:</strong> 2018-05-16</p>
 <!-- Insert the R version (Git commit SHA1) if Git repository exists and R
  package git2r is installed -->
+<p><strong>Code version:</strong> cdc53c9</p>
+<pre><code>Loading required package: ashr</code></pre>
 <div id="simulation-without-signal" class="section level1">
 <h1>Simulation without signal</h1>
 <p><span class="math display">\[c_{j} = \mu_{j} 1\]</span> <span class="math display">\[\hat{c}_{j} \sim N_{R}(c_{j}, \frac{1}{2}I)\]</span> Let L be the contrast matrix, which comparing each condition with the mean. <span class="math display">\[L = \left(\begin{array}{c c c c}
@@ -333,7 +335,7 @@ div.section {
 <p>Therefore, <span class="math display">\[\hat{\delta}_{j} = L\hat{c}_{j} \sim N_{R-1}(0, \frac{1}{2}LL&#39;)\]</span></p>
 <p>We first generate the data:</p>
 <pre class="r"><code>set.seed(1)
-data = sim(nsamp = 10000, ncond = 8)</code></pre>
+data = sim_contrast1(nsamp = 10000, ncond = 8)</code></pre>
 </div>
 <div id="mash-contrast-model" class="section level1">
 <h1>Mash contrast model</h1>
@@ -353,30 +355,30 @@ mash_data_L = mash_set_data_contrast(mash_data, L)</code></pre>
 <p>Fit <code>mashcontrast</code> model</p>
 <pre class="r"><code>mashcontrast.model = mash(mash_data_L, U.c, algorithm.version = &#39;R&#39;)</code></pre>
 <pre><code> - Computing 10000 x 169 likelihood matrix.
- - Likelihood calculations took 1.15 seconds.
+ - Likelihood calculations took 1.05 seconds.
  - Fitting model with 169 mixture components.
- - Model fitting took 2.06 seconds.
+ - Model fitting took 1.94 seconds.
  - Computing posterior matrices.
- - Computation allocated took 0.09 seconds.</code></pre>
+ - Computation allocated took 0.05 seconds.</code></pre>
 <pre class="r"><code>length(get_significant_results(mashcontrast.model))</code></pre>
 <pre><code>[1] 0</code></pre>
 <p>There is no discovery, which is as we expected. The true deviations from mean are zero for all samples.</p>
-<pre class="r"><code>barplot(get_estimated_pi(mashcontrast.model),las = 2)</code></pre>
+<pre class="r"><code>barplot(get_estimated_pi(mashcontrast.model),las = 2, cex.names = 0.7)</code></pre>
 <p><img src="figure/CompareMeanNonSignal.Rmd/unnamed-chunk-8-1.png" width="672" style="display: block; margin: auto;" /></p>
 </div>
 <div id="subtract-mean-directly" class="section level1">
 <h1>Subtract mean directly</h1>
-<p>If we subtract the mean from the data directly, ignoring the correlation structure. <span class="math display">\[Var(\hat{c}_{j,r}-\bar{\hat{c}_{j}}) = \frac{1}{2} + \frac{1}{2R}\]</span></p>
+<p>If we subtract the mean from the data directly, ignoring the correlation structure. <span class="math display">\[Var(\hat{c}_{j,r}-\bar{\hat{c}_{j}}) = \frac{1}{2} - \frac{1}{2R}\]</span></p>
 <pre class="r"><code>Indep.data = mash_set_data(Bhat = (data$Chat - apply(data$Chat,1, mean))[,1:7],
-                           Shat = matrix(sqrt(0.5+1/(8*2)), nrow(data$Chat), ncol(data$Chat)-1))
+                           Shat = matrix(sqrt(0.5-1/(8*2)), nrow(data$Chat), ncol(data$Chat)-1))
 U.c = cov_canonical(mash_data_L)
 Indep.model = mash(Indep.data, U.c, algorithm.version = &#39;R&#39;)</code></pre>
 <pre><code> - Computing 10000 x 169 likelihood matrix.
- - Likelihood calculations took 0.76 seconds.
+ - Likelihood calculations took 0.86 seconds.
  - Fitting model with 169 mixture components.
- - Model fitting took 1.62 seconds.
+ - Model fitting took 2.05 seconds.
  - Computing posterior matrices.
- - Computation allocated took 0.04 seconds.</code></pre>
+ - Computation allocated took 0.08 seconds.</code></pre>
 <pre class="r"><code>length(get_significant_results(Indep.model))</code></pre>
 <pre><code>[1] 0</code></pre>
 <p>There are no false positives.</p>
@@ -388,9 +390,9 @@ Indep.model = mash(Indep.data, U.c, algorithm.version = &#39;R&#39;)</code></pre
 <h1>Session information</h1>
 <!-- Insert the session information into the document -->
 <pre class="r"><code>sessionInfo()</code></pre>
-<pre><code>R version 3.4.3 (2017-11-30)
+<pre><code>R version 3.4.4 (2018-03-15)
 Platform: x86_64-apple-darwin15.6.0 (64-bit)
-Running under: macOS High Sierra 10.13.2
+Running under: macOS High Sierra 10.13.4
 
 Matrix products: default
 BLAS: /Library/Frameworks/R.framework/Versions/3.4/Resources/lib/libRblas.0.dylib
@@ -403,19 +405,20 @@ attached base packages:
 [1] stats     graphics  grDevices utils     datasets  methods   base     
 
 other attached packages:
-[1] assertthat_0.2.0 mvtnorm_1.0-6    plyr_1.8.4       ashr_2.2-3      
+[1] mashr_0.2-8 ashr_2.2-7 
 
 loaded via a namespace (and not attached):
- [1] Rcpp_0.12.14      knitr_1.17        magrittr_1.5     
- [4] REBayes_1.2       MASS_7.3-47       doParallel_1.0.11
+ [1] Rcpp_0.12.16      knitr_1.20        magrittr_1.5     
+ [4] REBayes_1.3       MASS_7.3-50       doParallel_1.0.11
  [7] pscl_1.5.2        SQUAREM_2017.10-1 lattice_0.20-35  
-[10] foreach_1.4.4     stringr_1.2.0     tools_3.4.3      
-[13] parallel_3.4.3    grid_3.4.3        htmltools_0.3.6  
-[16] iterators_1.0.9   yaml_2.1.16       rprojroot_1.2    
-[19] digest_0.6.13     Matrix_1.2-12     codetools_0.2-15 
-[22] evaluate_0.10.1   rmarkdown_1.8     stringi_1.1.6    
-[25] compiler_3.4.3    Rmosek_8.0.69     backports_1.1.2  
-[28] truncnorm_1.0-7  </code></pre>
+[10] foreach_1.4.4     plyr_1.8.4        stringr_1.3.0    
+[13] tools_3.4.4       parallel_3.4.4    grid_3.4.4       
+[16] rmeta_3.0         git2r_0.21.0      htmltools_0.3.6  
+[19] iterators_1.0.9   assertthat_0.2.0  yaml_2.1.19      
+[22] rprojroot_1.3-2   digest_0.6.15     Matrix_1.2-14    
+[25] codetools_0.2-15  evaluate_0.10.1   rmarkdown_1.9    
+[28] stringi_1.2.2     compiler_3.4.4    Rmosek_8.0.69    
+[31] backports_1.1.2   mvtnorm_1.0-7     truncnorm_1.0-8  </code></pre>
 </div>
 
 <!-- Adjust MathJax settings so that all math formulae are shown using
