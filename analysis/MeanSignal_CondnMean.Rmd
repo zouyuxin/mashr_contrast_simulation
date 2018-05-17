@@ -1,0 +1,203 @@
+---
+title: "MeanSignal_CondnMean"
+author: "Yuxin Zou"
+date: 2018-5-16
+output: 
+  html_document:
+    code_folding: hide
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+<!-- Update knitr chunk options -->
+```{r knitr-opts-chunk, include=FALSE}
+```
+
+<!-- Insert the date the file was last updated -->
+```{r last-updated, echo=FALSE, results='asis'}
+```
+
+```{r code-version, echo=FALSE, results='asis'}
+```
+
+```{r, echo=FALSE}
+library(mashr)
+library(corrplot); library(ggplot2)
+source('../code/sim_mean_sig.R')
+source('../code/MashSource.R')
+```
+
+The data contains 10 conditions with 10% non-null samples. For the non-null samples, it has equal effects in the first c conditions. 
+
+Let L be the contrast matrix that substract mean from each sample.
+
+$$\hat{\delta}_{j}|\delta_{j} \sim N(\delta_{j}, \frac{1}{2}LL')$$
+90% of the true deviations are 0. 10% of the deviation $\delta_{j}$ has correlation that the first c conditions are negatively correlated with the rest conditions.
+
+We set $c = 2$.
+```{r, echo=FALSE}
+set.seed(1)
+R = 10
+C = 2
+data = sim.mean.sig(nsamp=10000, ncond=C)
+```
+
+```{r, echo=FALSE}
+L = matrix(-1/R, R, R)
+diag(L) = (R-1)/R
+row.names(L) = colnames(data$Chat)
+mash_data = mash_set_data(Bhat=data$Chat, Shat=data$Shat)
+```
+
+# Mash
+
+```{r, echo=FALSE}
+L.10 = L[1:R-1,]
+mash_data_L = mash_set_data_contrast(mash_data, L.10)
+U.c = cov_canonical(mash_data_L)
+
+# data driven
+# select max
+m.1by1 = mash_1by1(mash_data_L, alpha=0)
+strong = get_significant_results(m.1by1,0.05)
+# center Z
+mash_data.center = mash_data_L
+mash_data.center$Bhat = mash_data_L$Bhat/mash_data_L$Shat # obtain z
+mash_data.center$Shat = matrix(1, nrow(mash_data_L$Bhat),ncol(mash_data_L$Bhat))
+mash_data.center$Bhat = apply(mash_data.center$Bhat, 2, function(x) x - mean(x))
+U.pca = cov_pca(mash_data.center,2,strong)
+U.ed = cov_ed(mash_data.center, U.pca, strong)
+
+mashcontrast.model = mash(mash_data_L, c(U.c, U.ed), algorithm.version = 'R')
+```
+
+Using `mashcommonbaseline`, there are `r length(get_significant_results(mashcontrast.model))` discoveries. The covariance structure found here is:
+```{r, echo=FALSE}
+barplot(get_estimated_pi(mashcontrast.model),las = 2, cex.names = 0.7)
+```
+
+Recover the last column
+```{r}
+mashcontrast.model.10.full = mashcontrast.model
+mashcontrast.model.10.full$result = mash_compute_posterior_matrices(g = mashcontrast.model, data = mash_data_L, algorithm.version = 'R', recover=TRUE)
+```
+
+There are `r length(get_significant_results(mashcontrast.model.10.full))` discoveries.
+
+# Bovy
+```{r, echo=FALSE}
+mash_data_L = mash_set_data_contrast(mash_data, L)
+U.c = cov_canonical(mash_data_L)
+
+# data driven
+# select max
+m.1by1 = mash_1by1(mash_data_L, alpha=0)
+strong = get_significant_results(m.1by1,0.05)
+# center Z
+mash_data.center = mash_data_L
+mash_data.center$Bhat = mash_data_L$Bhat/mash_data_L$Shat # obtain z
+mash_data.center$Shat = matrix(1, nrow(mash_data_L$Bhat),ncol(mash_data_L$Bhat))
+mash_data.center$Bhat = apply(mash_data.center$Bhat, 2, function(x) x - mean(x))
+U.pca = cov_pca(mash_data.center,2,strong)
+U.ed = cov_ed(mash_data.center, U.pca, strong)
+
+L.10 = L[1:(R-1),]
+mash_data_L_10 = mash_set_data_contrast(mash_data, L.10)
+mash_data_L_10$Shat_alpha = mash_data_L$Shat_alpha
+mashcontrast.model = mash(mash_data_L_10, c(U.c, U.ed), algorithm.version = 'R', Bovy=TRUE)
+```
+
+Using `mashcommonbaseline`, there are `r length(get_significant_results(mashcontrast.model))` discoveries. The covariance structure found here is:
+```{r, echo=FALSE}
+barplot(get_estimated_pi(mashcontrast.model),las = 2, cex.names = 0.7)
+```
+
+The row means of the posterior mean matrix are not 0.
+```{r}
+rowMeans(mashcontrast.model$result$PosteriorMean)[1:6]
+```
+
+* Original estimates
+```{r echo=FALSE}
+# raw effect
+mash_data_L = mash_set_data_contrast(mash_data, L)
+stronggene = data.frame(mash_data_L$Bhat[9211,])
+colnames(stronggene) = 'EffectSize'
+stronggene$Group = row.names(stronggene)
+stronggene$Group <- factor(stronggene$Group, levels = paste0('condition_',1:10))
+stronggene$se = mash_data_L$Shat[9211,]
+ggplot(stronggene, aes(y = EffectSize, x = Group, color=Group)) + 
+  geom_point() + 
+  geom_errorbar(aes(ymin=EffectSize-1.96*se, ymax=EffectSize+1.96*se), width=0.4) + 
+  theme_bw(base_size=12) + coord_flip()
+```
+
+* `MASH` estimates
+
+```{r echo=FALSE}
+# Improved
+stronggenePost = data.frame(mashcontrast.model.10.full$result$PosteriorMean[9211,])
+colnames(stronggenePost) = 'EffectSize'
+stronggenePost$Group = row.names(stronggenePost)
+stronggenePost$se = mashcontrast.model.10.full$result$PosteriorSD[9211,]
+ggplot(stronggenePost, aes(y = EffectSize, x = Group, color=Group)) + 
+  geom_point() + 
+  geom_errorbar(aes(ymin=EffectSize-1.96*se, ymax=EffectSize+1.96*se), width=0.4) + 
+  theme_bw(base_size=12) + coord_flip()
+```
+
+* `Bovy` estimates
+
+```{r echo=FALSE}
+# Improved
+stronggenePost = data.frame(mashcontrast.model$result$PosteriorMean[9211,])
+colnames(stronggenePost) = 'EffectSize'
+stronggenePost$Group = row.names(stronggenePost)
+stronggenePost$se = mashcontrast.model$result$PosteriorSD[9211,]
+ggplot(stronggenePost, aes(y = EffectSize, x = Group, color=Group)) + 
+  geom_point() + 
+  geom_errorbar(aes(ymin=EffectSize-1.96*se, ymax=EffectSize+1.96*se), width=0.4) + 
+  theme_bw(base_size=12) + coord_flip()
+```
+
+```{r}
+mean((mashcontrast.model$result$PosteriorMean - mashcontrast.model.10.full$result$PosteriorMean)^2)
+```
+
+# Compare models
+
+The RRMSE plot:
+```{r}
+delta.10 = data$C - rowMeans(data$C)
+deltahat.10 = data$Chat - rowMeans(data$Chat)
+
+barplot(c(sqrt(mean((delta.10 - mashcontrast.model.10.full$result$PosteriorMean)^2)/mean((delta.10 - deltahat.10)^2)), sqrt(mean((delta.10 - mashcontrast.model$result$PosteriorMean)^2)/mean((delta.10 - deltahat.10)^2))), ylim=c(0,0.2), names.arg = c('mashcommon.10','Bovy'), ylab='RRMSE')
+```
+
+We check the False Positive Rate and True Positive Rate. 
+$$FPR = \frac{|N\cap S|}{|N|} \quad TPR = \frac{|CS\cap S|}{|T|} $$
+
+```{r}
+sign.test.mash.10 = as.matrix(delta.10)*mashcontrast.model.10.full$result$PosteriorMean
+sign.test.bovy = as.matrix(delta.10)*mashcontrast.model$result$PosteriorMean
+
+
+thresh.seq = seq(0, 1, by=0.0005)[-1]
+mashcontrast.10 = matrix(0,length(thresh.seq), 2)
+bovy = matrix(0,length(thresh.seq), 2)
+colnames(mashcontrast.10) = colnames(bovy) = c('TPR', 'FPR')
+
+for(t in 1:length(thresh.seq)){
+  mashcontrast.10[t,] = c(sum(sign.test.mash.10>0 & mashcontrast.model.10.full$result$lfsr <= thresh.seq[t])/sum(delta.10!=0), sum(delta.10==0 & mashcontrast.model.10.full$result$lfsr <=thresh.seq[t])/sum(delta.10==0))
+  
+  bovy[t,] = c(sum(sign.test.bovy>0& mashcontrast.model$result$lfsr <=thresh.seq[t])/sum(delta.10!=0),  sum(delta.10==0& mashcontrast.model$result$lfsr <=thresh.seq[t])/sum(delta.10==0))
+}
+```
+
+```{r, echo=FALSE}
+{plot(mashcontrast.10[,'FPR'], mashcontrast.10[,'TPR'], col='red',type='l',xlab = 'FPR', ylab='TPR', main='True Positive vs False Positive')
+lines(bovy[,'FPR'], bovy[,'TPR'], col='cyan')
+legend('bottomright', c('mashcommon','bovy'),col=c('red', 'cyan'),lty=c(1,1))}
+```
