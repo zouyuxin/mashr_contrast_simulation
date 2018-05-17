@@ -224,7 +224,11 @@ div.section {
 <li>The contrast matrix to subtract the mean:
 <ul>
 <li>Without signal: <a href="CompareMeanNonSignal.html">Compare with mean without signal</a></li>
-<li>With signal: <a href="CompareMeanSignal.html">Compare with mean with signal</a></li>
+<li>With signal: <a href="CompareMeanSignalRec.html">Compare with mean with signal</a></li>
+<li>The estimated covariance in the the previous analysis was based on the data excluding the discarded column. Another way is estimating the covariance based on the full data. If we discard the ith column, then discard the ith row and ith column of the estimated covariance matrices. The <code>mashcommonbaseline</code> method is robust of the choice of the discarded column. <a href="CompareMeanSignalRecWhole.html">Compare with mean with signal (Whole)</a></li>
+<li>Treat Mean as constant: <a href="CompareMeanSignalRecMis.html">Mean Constant</a></li>
+<li>When we increase R: <a href="CompareMeanSignalRecR50.html">MeanSignalR=50</a></li>
+<li>Compare <code>commonbaseline</code> with Bovy: <a href="MeanSignal_CondnMean.html">Compare with Bovy</a></li>
 </ul></li>
 <li><p>Outlier There are two kinds of outlier problem in <code>mash</code>.</p>
 <ul>
