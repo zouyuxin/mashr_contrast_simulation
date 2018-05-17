@@ -336,10 +336,10 @@ div.section {
 
 <!-- Update knitr chunk options -->
 <!-- Insert the date the file was last updated -->
-<p><strong>Last updated:</strong> 2018-05-16</p>
+<p><strong>Last updated:</strong> 2018-05-17</p>
 <!-- Insert the R version (Git commit SHA1) if Git repository exists and R
  package git2r is installed -->
-<p><strong>Code version:</strong> 3bfe572</p>
+<p><strong>Code version:</strong> 04f5122</p>
 <pre><code>Loading required package: ashr</code></pre>
 <pre><code>corrplot 0.84 loaded</code></pre>
 <pre class="r"><code>#&#39; Create simulation with signal
@@ -499,7 +499,7 @@ Indep.model.1 = mash(Indep.data.1, c(U.c, U.ed), algorithm.version = &#39;R&#39;
 0.0631737437819963, : Optimization step yields mixture weights that are
 either too small, or negative; weights have been corrected and renormalized
 after the optimization.</code></pre>
-<p>For <code>mashIndep</code> model, there are 606 discoveries, which is <strong>less</strong> than the <code>mashcommonbaseline</code> model. The covariance structure found here is:</p>
+<p>For <code>mashIndep</code> model, there are 606 discoveries. The covariance structure found here is:</p>
 <pre class="r"><code>barplot(get_estimated_pi(Indep.model.1),las = 2, cex.names = 0.7)</code></pre>
 <p><img src="figure/CompareMeanSignalRecR50.Rmd/unnamed-chunk-17-1.png" width="672" style="display: block; margin: auto;" /></p>
 <p>Recover the first column</p>
