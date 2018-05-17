@@ -336,10 +336,8 @@ div.section {
 
 <!-- Update knitr chunk options -->
 <!-- Insert the date the file was last updated -->
-<p><strong>Last updated:</strong> 2018-05-16</p>
-<!-- Insert the R version (Git commit SHA1) if Git repository exists and R
- package git2r is installed -->
-<p><strong>Code version:</strong> 7946d8a</p>
+<p><strong>Last updated:</strong> 2018-05-17</p>
+<p><strong>Code version:</strong> 6c49cff</p>
 <pre><code>Loading required package: ashr</code></pre>
 <pre><code>corrplot 0.84 loaded</code></pre>
 <p>The data contains 10 conditions with 10% non-null samples. For the non-null samples, it has equal effects in the first c conditions.</p>
@@ -350,22 +348,27 @@ div.section {
 R = 10
 C = 2
 data = sim.mean.sig(nsamp=10000, ncond=C)</code></pre>
+<div id="ash-1-by-1" class="section level1">
+<h1>Ash 1 by 1</h1>
+<pre class="r"><code>L = matrix(-1/R, R, R)
+diag(L) = (R-1)/R
+row.names(L) = colnames(data$Chat)
+mash_data = mash_set_data(Bhat=data$Chat, Shat=data$Shat)
+mash_data_L = mash_set_data_contrast(mash_data, L)
+m.1by1 = mash_1by1(mash_data_L)</code></pre>
+</div>
 <div id="discard-last-column" class="section level1">
 <h1>Discard last column</h1>
 <div id="mash-contrast-model" class="section level2">
 <h2>Mash contrast model</h2>
-<pre class="r"><code>L = matrix(-1/R, R, R)
-L[cbind(1:R,1:R)] = (R-1)/R
-row.names(L) = colnames(data$Chat)
-L.10 = L[1:(R-1),]
-mash_data = mash_set_data(Bhat=data$Chat, Shat=data$Shat)
+<pre class="r"><code>L.10 = L[1:(R-1),]
 mash_data_L.10 = mash_set_data_contrast(mash_data, L.10)</code></pre>
 <pre class="r"><code>U.c = cov_canonical(mash_data_L.10)
 
 # data driven
 # select max
-m.1by1 = mash_1by1(mash_data_L.10)
-strong = get_significant_results(m.1by1,0.05)
+m.1by1.10 = mash_1by1(mash_data_L.10)
+strong = get_significant_results(m.1by1.10,0.05)
 # center Z
 mash_data_L.center = mash_data_L.10
 mash_data_L.center$Bhat = mash_data_L.10$Bhat/mash_data_L.10$Shat # obtain z
@@ -428,8 +431,8 @@ mash_data_L.1 = mash_set_data_contrast(mash_data, L.1)</code></pre>
 
 # data driven
 # select max
-m.1by1 = mash_1by1(mash_data_L.1)
-strong = get_significant_results(m.1by1,0.05)
+m.1by1.1 = mash_1by1(mash_data_L.1)
+strong = get_significant_results(m.1by1.1,0.05)
 # center Z
 mash_data_L.center = mash_data_L.1
 mash_data_L.center$Bhat = mash_data_L.1$Bhat/mash_data_L.1$Shat # obtain z
@@ -481,15 +484,17 @@ deltahat.10 = data$Chat - rowMeans(data$Chat)
 delta.1 = delta.10[, c(2:10, 1)]
 deltahat.1 = deltahat.10[, c(2:10, 1)]
 
-barplot(c(sqrt(mean((delta.10 - mashcontrast.model.10.full$result$PosteriorMean)^2)/mean((delta.10 - deltahat.10)^2)), 
+barplot(c(sqrt(mean((delta.10 - m.1by1$result$PosteriorMean)^2)/mean((delta.10 - deltahat.10)^2)),
+          sqrt(mean((delta.10 - mashcontrast.model.10.full$result$PosteriorMean)^2)/mean((delta.10 - deltahat.10)^2)), 
           sqrt(mean((delta.1 - mashcontrast.model.1.full$result$PosteriorMean)^2)/mean((delta.1 - deltahat.1)^2)), 
           sqrt(mean((delta.10 - Indep.model.10.full$result$PosteriorMean)^2)/mean((delta.10 - deltahat.10)^2)),
           sqrt(mean((delta.1 - Indep.model.1.full$result$PosteriorMean)^2)/mean((delta.1 - deltahat.1)^2)), 
           sqrt(mean((delta.10 - Mis.model.10.full$result$PosteriorMean)^2)/mean((delta.10 - deltahat.10)^2)), 
-          sqrt(mean((delta.1 - Mis.model.1.full$result$PosteriorMean)^2)/mean((delta.1 - deltahat.1)^2))), ylim=c(0,0.2), names.arg = c(&#39;mashcommon.10&#39;,&#39;mashcommon.1&#39;,&#39;mash.indep.10&#39;, &#39;mash.indep.1&#39;, &#39;mis.10&#39;, &#39;mis.1&#39;), ylab=&#39;RRMSE&#39;)</code></pre>
+          sqrt(mean((delta.1 - Mis.model.1.full$result$PosteriorMean)^2)/mean((delta.1 - deltahat.1)^2))), ylim=c(0,0.3), names.arg = c(&#39;ash&#39;,&#39;mashcommon.10&#39;,&#39;mashcommon.1&#39;,&#39;mash.indep.10&#39;, &#39;mash.indep.1&#39;, &#39;mis.10&#39;, &#39;mis.1&#39;), ylab=&#39;RRMSE&#39;)</code></pre>
 <p><img src="figure/CompareMeanSignalRec.Rmd/unnamed-chunk-29-1.png" width="672" style="display: block; margin: auto;" /></p>
 <p>We check the False Positive Rate and True Positive Rate. <span class="math display">\[FPR = \frac{|N\cap S|}{|N|} \quad TPR = \frac{|CS\cap S|}{|T|} \]</span></p>
-<pre class="r"><code>sign.test.mash.10 = as.matrix(delta.10)*mashcontrast.model.10.full$result$PosteriorMean
+<pre class="r"><code>sign.test.ash = as.matrix(delta.10)*m.1by1$result$PosteriorMean
+sign.test.mash.10 = as.matrix(delta.10)*mashcontrast.model.10.full$result$PosteriorMean
 sign.test.Indep.10 = as.matrix(delta.10)*Indep.model.10.full$result$PosteriorMean
 sign.test.Mis.10 = as.matrix(delta.10)*Mis.model.10.full$result$PosteriorMean
 sign.test.mash.1 = as.matrix(delta.1)*mashcontrast.model.1.full$result$PosteriorMean
@@ -498,17 +503,20 @@ sign.test.Mis.1 = as.matrix(delta.1)*Mis.model.1.full$result$PosteriorMean
 
 
 thresh.seq = seq(0, 1, by=0.0005)[-1]
+Ash = matrix(0,length(thresh.seq), 2)
 mashcontrast.1 = matrix(0,length(thresh.seq), 2)
 Indep.1 = matrix(0,length(thresh.seq), 2)
 Mis.1 = matrix(0,length(thresh.seq), 2)
 mashcontrast.10 = matrix(0,length(thresh.seq), 2)
 Indep.10 = matrix(0,length(thresh.seq), 2)
 Mis.10 = matrix(0,length(thresh.seq), 2)
-colnames(mashcontrast.1) = colnames(Mis.10) = colnames(Mis.1) = c(&#39;TPR&#39;, &#39;FPR&#39;)
+colnames(mashcontrast.1) = colnames(Mis.10) = colnames(Mis.1) = colnames(Ash) = c(&#39;TPR&#39;, &#39;FPR&#39;)
 colnames(Indep.1) = c(&#39;TPR&#39;, &#39;FPR&#39;)
 colnames(mashcontrast.10) = c(&#39;TPR&#39;, &#39;FPR&#39;)
 colnames(Indep.10) = c(&#39;TPR&#39;, &#39;FPR&#39;)
 for(t in 1:length(thresh.seq)){
+  Ash[t,] = c(sum(sign.test.ash&gt;0 &amp; m.1by1$result$lfsr &lt;= thresh.seq[t])/sum(delta.10!=0), sum(delta.10==0 &amp; m.1by1$result$lfsr &lt;=thresh.seq[t])/sum(delta.10==0))
+  
   mashcontrast.1[t,] = c(sum(sign.test.mash.1&gt;0 &amp; mashcontrast.model.1.full$result$lfsr &lt;= thresh.seq[t])/sum(delta.1!=0), sum(delta.1==0 &amp; mashcontrast.model.1.full$result$lfsr &lt;=thresh.seq[t])/sum(delta.1==0))
   
   Indep.1[t,] = c(sum(sign.test.Indep.1&gt;0&amp; Indep.model.1.full$result$lfsr &lt;=thresh.seq[t])/sum(delta.1!=0),  sum(delta.1==0&amp; Indep.model.1.full$result$lfsr &lt;=thresh.seq[t])/sum(delta.1==0))
