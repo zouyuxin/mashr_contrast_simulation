@@ -268,3 +268,9 @@ lines(Mis.1[,'FPR'], Mis.1[,'TPR'], col='blue')
 lines(Mis.10[,'FPR'], Mis.10[,'TPR'], col='cyan')
 legend('bottomright', c('mashcommon.1','mashcommon.10', 'mis.1', 'mis.10'),col=c('red','green', 'blue', 'cyan'),lty=c(1,1,1,1))}
 ```
+
+# Session information
+
+<!-- Insert the session information into the document -->
+```{r session-info}
+```
