@@ -17,17 +17,10 @@ knitr::read_chunk("chunks.R")
 ```{r last-updated, echo=FALSE, results='asis'}
 ```
 
-<!-- Insert the R version (Git commit SHA1) if Git repository exists and R
- package git2r is installed -->
-```{r R-version, echo=FALSE, results='asis'}
+```{r code-version, echo=FALSE, results='asis'}
 ```
 
-```{r, echo=FALSE}
-# TEMPORARY.
-knitr::opts_chunk$set(eval = TRUE)
-```
-
-```{r, echo=FALSE}
+```{r}
 library(mashr)
 ```
 
@@ -65,14 +58,6 @@ U.c = cov_canonical(mash_data_L)
 m.1by1 = mash_1by1(mash_data_L, alpha=0)
 strong = get_significant_results(m.1by1,0.05)
 # only 1 strong samples
-
-# center Z
-# mash_data_L.center = mash_data_L
-# mash_data_L.center$Bhat = mash_data_L$Bhat/mash_data_L$BShat # obtain z
-# mash_data_L.center$BShat = matrix(1, nrow(mash_data_L$Bhat),ncol(mash_data_L$Bhat))
-# mash_data_L.center$Bhat = apply(mash_data_L.center$Bhat, 2, function(x) x - mean(x))
-# U.pca = cov_pca(mash_data_L.center,5,strong)
-# U.ed = cov_ed(mash_data_L.center, U.pca, strong)
 ```
 
 Fit `mashcontrast` model
@@ -111,7 +96,7 @@ barplot(get_estimated_pi(Indep.model),las = 2, cex.names = 0.7)
 ```
 
 The RRMSE plot:
-```{r, echo=FALSE}
+```{r}
 delta = data$C %*% t(L)
 barplot(c(sqrt(mean((delta - m.1by1$result$PosteriorMean)^2)/mean((delta - data$Chat%*%t(L))^2)), sqrt(mean((delta - mashcontrast.model$result$PosteriorMean)^2)/mean((delta - data$Chat%*%t(L))^2)), sqrt(mean((delta - Indep.model$result$PosteriorMean)^2)/mean((delta - data$Chat%*%t(L))^2))), ylim=c(0,0.8), names.arg = c('ash','mashcommonbaseline', 'mashIndep'), ylab='RRMSE')
 ```
@@ -119,21 +104,10 @@ barplot(c(sqrt(mean((delta - m.1by1$result$PosteriorMean)^2)/mean((delta - data$
 We check the False Positive Rate and True Positive Rate. 
 $$FPR = \frac{|N\cap S|}{|N|} \quad TPR = \frac{|CS\cap S|}{|T|} $$
 
-```{r, echo=FALSE}
-# CS_S = function(model, thresh=0.05, data){
-#   sig.index = model$result$lfsr <= thresh
-#   sum(sig.index * model$result$PosteriorMean * data > 0)
-# }
-# 
-# N_S = function(model, thresh=0.05, data){
-#   N.index = data == 0
-#   sig.index = model$result$lfsr <= thresh
-#   sum(sig.index * N.index)
-# }
-
+Each effect is treated as a separate discovery in each condition
+```{r}
 delta = data$C %*% t(L)
-# N = sum(delta == 0)
-# Tr = sum(delta != 0)
+
 sign.test.mash = as.matrix(delta)*mashcontrast.model$result$PosteriorMean
 sign.test.Indep = as.matrix(delta)*Indep.model$result$PosteriorMean
 sign.test.ash = as.matrix(delta)*m.1by1$result$PosteriorMean
@@ -154,7 +128,7 @@ for(t in 1:length(thresh.seq)){
 
 ```
 
-```{r, echo=FALSE}
+```{r}
 {plot(mashcontrast[,'FPR'], mashcontrast[,'TPR'], col='red',type='l',ylab="True Positive Rate",xlab="False Positive Rate")
 lines(Indep[,'FPR'], Indep[,'TPR'])
 lines(Ash[,'FPR'], Ash[,'TPR'], col='green')
@@ -162,7 +136,8 @@ legend('bottomright', c('mashcommonbaseline', 'mashIndep', 'ash'),col=c('red','b
 }
 ```
 
-```{r, echo=FALSE}
+Each effect is treated as a single discovery across all conditions
+```{r}
 delta = data$C %*% t(L)
 
 thresh.seq = seq(0, 1, by=0.001)[-1]
@@ -181,7 +156,7 @@ for(t in 1:length(thresh.seq)){
 
 ```
 
-```{r, echo=FALSE}
+```{r}
 {plot(mashcontrast[,'FPR'], mashcontrast[,'TPR'], col='red',type='l',ylab="True Positive Rate",xlab="False Positive Rate")
 lines(Indep[,'FPR'], Indep[,'TPR'])
 lines(Ash[,'FPR'], Ash[,'TPR'], col='green')
@@ -189,8 +164,9 @@ legend('bottomright', c('mashcommonbaseline', 'mashIndep', 'ash'),col=c('red','b
 }
 ```
 
+lfsr:
 ```{r}
-thresh.seq = seq(0, 1, by=0.001)[-1]
+thresh.seq = seq(0, 0.5, by=0.001)[-1]
 mashcontrast = Indep = Ash = numeric(length(thresh.seq))
 
 sign.test.mash = as.matrix(delta)*mashcontrast.model$result$PosteriorMean
@@ -199,19 +175,19 @@ sign.test.ash = as.matrix(delta)*m.1by1$result$PosteriorMean
 
 for(t in 1:length(thresh.seq)){
   sig = mashcontrast.model$result$lfsr <= thresh.seq[t]
-  mashcontrast[t] = sum(delta==0 & sig)/sum(sig)
+  mashcontrast[t] = sum(sign.test.mash<=0 & sig)/sum(sig)
   
   sig = Indep.model$result$lfsr <= thresh.seq[t]
-  Indep[t] = sum(delta==0 & sig)/sum(sig)
+  Indep[t] = sum(sign.test.Indep<=0 & sig)/sum(sig)
   
   sig = m.1by1$result$lfsr <= thresh.seq[t]
-  Ash[t] = sum(delta==0 & sig)/sum(sig)
+  Ash[t] = sum(sign.test.ash<=0 & sig)/sum(sig)
 }
 
 ```
 
 ```{r}
-{plot(thresh.seq, mashcontrast, type='l', col='red', ylab='fdr')
+{plot(thresh.seq, mashcontrast, type='l', col='red', ylab='fsr', ylim=c(0,0.5))
 lines(thresh.seq, Indep, col='blue')
 lines(thresh.seq, Ash, col='green')
 lines(thresh.seq, thresh.seq)
