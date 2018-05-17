@@ -320,7 +320,7 @@ div.section {
 <!-- Update knitr chunk options -->
 <!-- Insert the date the file was last updated -->
 <p><strong>Last updated:</strong> 2018-05-17</p>
-<p><strong>Code version:</strong> 84145da</p>
+<p><strong>Code version:</strong> c654c7e</p>
 <pre class="r"><code>library(mashr)</code></pre>
 <pre><code>Loading required package: ashr</code></pre>
 <div id="simulation-design" class="section level1">
@@ -348,11 +348,11 @@ strong = get_significant_results(m.1by1,0.05)
 <p>Fit <code>mashcontrast</code> model</p>
 <pre class="r"><code>mashcontrast.model = mash(mash_data_L, U.c, algorithm.version = &#39;R&#39;)</code></pre>
 <pre><code> - Computing 12000 x 181 likelihood matrix.
- - Likelihood calculations took 1.01 seconds.
+ - Likelihood calculations took 0.95 seconds.
  - Fitting model with 181 mixture components.
- - Model fitting took 2.22 seconds.
+ - Model fitting took 2.10 seconds.
  - Computing posterior matrices.
- - Computation allocated took 0.59 seconds.</code></pre>
+ - Computation allocated took 0.57 seconds.</code></pre>
 <pre class="r"><code>print(get_loglik(mashcontrast.model),digits = 10)</code></pre>
 <pre><code>[1] -105519.4856</code></pre>
 <p>Use <code>get_significant_results</code> to find the indices of effects that are “significant”:</p>
@@ -367,9 +367,9 @@ strong = get_significant_results(m.1by1,0.05)
 <pre class="r"><code>Indep.data = mash_set_data(Bhat = mash_data_L$Bhat)
 Indep.model = mash(Indep.data, U.c)</code></pre>
 <pre><code> - Computing 12000 x 181 likelihood matrix.
- - Likelihood calculations took 0.24 seconds.
+ - Likelihood calculations took 0.23 seconds.
  - Fitting model with 181 mixture components.
- - Model fitting took 2.42 seconds.
+ - Model fitting took 2.38 seconds.
  - Computing posterior matrices.
  - Computation allocated took 0.07 seconds.</code></pre>
 <pre class="r"><code>print(get_loglik(Indep.model),digits = 10)</code></pre>
