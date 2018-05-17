@@ -29,27 +29,7 @@ knitr::opts_chunk$set(eval = TRUE)
 ```
 
 ```{r, echo=FALSE}
-library(ashr)
-library(plyr)
-library(mvtnorm)
-library(assertthat)
-source('~/Documents/GitHub/mashr-zou/R/compute_covs.R')
-source('~/Documents/GitHub/mashr-zou/R/cov_udi.R')
-source('~/Documents/GitHub/mashr-zou/R/data2cov.R')
-source('~/Documents/GitHub/mashr-zou/R/ed.R')
-source('~/Documents/GitHub/mashr-zou/R/est_cor.R')
-source('~/Documents/GitHub/mashr-zou/R/get_functions.R')
-source('~/Documents/GitHub/mashr-zou/R/likelihoods_origdata.R')
-source('~/Documents/GitHub/mashr-zou/R/likelihoods_scaleddata.R')
-source('~/Documents/GitHub/mashr-zou/R/mash.R')
-source('~/Documents/GitHub/mashr-zou/R/opt.R')
-source('~/Documents/GitHub/mashr-zou/R/plots.R')
-source('~/Documents/GitHub/mashr-zou/R/posterior.R')
-source('~/Documents/GitHub/mashr-zou/R/posterior_common_cov.R')
-source('~/Documents/GitHub/mashr-zou/R/posterior_lowmem.R')
-source('~/Documents/GitHub/mashr-zou/R/RcppExports.R')
-source('~/Documents/GitHub/mashr-zou/R/set_data.R')
-source('~/Documents/GitHub/mashr-zou/R/simulations_contrast.R')
+library(mashr)
 ```
 
 # Simulation Design
@@ -62,7 +42,8 @@ Let L be the contrast matrix. Therefore, $$\hat{\delta}_{j} = L\hat{c}_{j} \sim 
 We first generate the data:
 ```{r}
 set.seed(1)
-data = sim(nsamp = 10000, ncond = 8)
+data = sim_contrast1(nsamp = 10000, ncond = 8)
+colnames(data$C) = colnames(data$Chat) = colnames(data$Shat) = c('CTL', paste0('T', 1:7))
 ```
 
 Set up the contrast matrix and the mash contrast data object
@@ -74,7 +55,7 @@ L = rbind(c(-1,1,0,0,0,0,0,0),
           c(-1,0,0,0,0,1,0,0),
           c(-1,0,0,0,0,0,1,0),
           c(-1,0,0,0,0,0,0,1))
-row.names(L) = c('2-1','3-1','4-1','5-1','6-1','7-1','8-1')
+row.names(L) = c('T1-CTL','T2-CTL','T3-CTL','T4-CTL','T5-CTL','T6-CTL','T7-CTL')
 mash_data = mash_set_data(Bhat=data$Chat, Shat=data$Shat)
 mash_data_L = mash_set_data_contrast(mash_data, L)
 ```
@@ -87,7 +68,7 @@ There are two types of covariance matrix you can use in mash: “canonical” an
 U.c = cov_canonical(mash_data_L)
 # data driven
 mash_data_L.z = mash_data_L
-mash_data_L.z$Bhat = mash_data_L$Bhat/mash_data_L$BShat
+mash_data_L.z$Bhat = mash_data_L$Bhat/mash_data_L$Shat
 m.1by1 = mash_1by1(mash_data_L.z)
 strong = get_significant_results(m.1by1,0.05)
 # no strong
