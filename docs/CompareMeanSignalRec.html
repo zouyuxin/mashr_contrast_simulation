@@ -337,7 +337,7 @@ div.section {
 <!-- Update knitr chunk options -->
 <!-- Insert the date the file was last updated -->
 <p><strong>Last updated:</strong> 2018-05-17</p>
-<p><strong>Code version:</strong> 6c49cff</p>
+<p><strong>Code version:</strong> 9333172</p>
 <pre><code>Loading required package: ashr</code></pre>
 <pre><code>corrplot 0.84 loaded</code></pre>
 <p>The data contains 10 conditions with 10% non-null samples. For the non-null samples, it has equal effects in the first c conditions.</p>
@@ -490,7 +490,7 @@ barplot(c(sqrt(mean((delta.10 - m.1by1$result$PosteriorMean)^2)/mean((delta.10 -
           sqrt(mean((delta.10 - Indep.model.10.full$result$PosteriorMean)^2)/mean((delta.10 - deltahat.10)^2)),
           sqrt(mean((delta.1 - Indep.model.1.full$result$PosteriorMean)^2)/mean((delta.1 - deltahat.1)^2)), 
           sqrt(mean((delta.10 - Mis.model.10.full$result$PosteriorMean)^2)/mean((delta.10 - deltahat.10)^2)), 
-          sqrt(mean((delta.1 - Mis.model.1.full$result$PosteriorMean)^2)/mean((delta.1 - deltahat.1)^2))), ylim=c(0,0.3), names.arg = c(&#39;ash&#39;,&#39;mashcommon.10&#39;,&#39;mashcommon.1&#39;,&#39;mash.indep.10&#39;, &#39;mash.indep.1&#39;, &#39;mis.10&#39;, &#39;mis.1&#39;), ylab=&#39;RRMSE&#39;)</code></pre>
+          sqrt(mean((delta.1 - Mis.model.1.full$result$PosteriorMean)^2)/mean((delta.1 - deltahat.1)^2))), ylim=c(0,0.3), names.arg = c(&#39;ash&#39;,&#39;common.10&#39;,&#39;common.1&#39;,&#39;mash.10&#39;, &#39;mash.1&#39;, &#39;mis.10&#39;, &#39;mis.1&#39;), las=2, cex.names = 0.7)</code></pre>
 <p><img src="figure/CompareMeanSignalRec.Rmd/unnamed-chunk-29-1.png" width="672" style="display: block; margin: auto;" /></p>
 <p>We check the False Positive Rate and True Positive Rate. <span class="math display">\[FPR = \frac{|N\cap S|}{|N|} \quad TPR = \frac{|CS\cap S|}{|T|} \]</span></p>
 <pre class="r"><code>sign.test.ash = as.matrix(delta.10)*m.1by1$result$PosteriorMean
