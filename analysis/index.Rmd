@@ -16,6 +16,7 @@ output:
     + Treat Mean as constant: [Mean Constant](CompareMeanSignalRecMis.html)
     + When we increase R: [MeanSignalR=50](CompareMeanSignalRecR50.html)
     + Compare `commonbaseline` with Bovy: [Compare with Bovy](MeanSignal_CondnMean.html)
+    
 * Outlier 
     There are two kinds of outlier problem in `mash`. 
 
