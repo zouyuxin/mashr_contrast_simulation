@@ -11,8 +11,11 @@ output:
     
 * The contrast matrix to subtract the mean:
     + Without signal: [Compare with mean without signal](CompareMeanNonSignal.html)
-    + With signal: [Compare with mean with signal](CompareMeanSignal.html)
-    
+    + With signal: [Compare with mean with signal](CompareMeanSignalRec.html)
+    + The estimated covariance in the the previous analysis was based on the data excluding the discarded column. Another way is estimating the covariance based on the full data. If we discard the ith column, then discard the ith row and ith column of the estimated covariance matrices. The `mashcommonbaseline` method is robust of the choice of the discarded column. [Compare with mean with signal (Whole)](CompareMeanSignalRecWhole.html)
+    + Treat Mean as constant: [Mean Constant](CompareMeanSignalRecMis.html)
+    + When we increase R: [MeanSignalR=50](CompareMeanSignalRecR50.html)
+    + Compare `commonbaseline` with Bovy: [Compare with Bovy](MeanSignal_CondnMean.html)
 * Outlier 
     There are two kinds of outlier problem in `mash`. 
 
