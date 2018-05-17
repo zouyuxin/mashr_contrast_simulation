@@ -363,7 +363,7 @@ barplot(c(sqrt(mean((delta.10 - m.1by1$result$PosteriorMean)^2)/mean((delta.10 -
           sqrt(mean((delta.10 - Indep.model.10.full$result$PosteriorMean)^2)/mean((delta.10 - deltahat.10)^2)),
           sqrt(mean((delta.1 - Indep.model.1.full$result$PosteriorMean)^2)/mean((delta.1 - deltahat.1)^2)), 
           sqrt(mean((delta.10 - Mis.model.10.full$result$PosteriorMean)^2)/mean((delta.10 - deltahat.10)^2)), 
-          sqrt(mean((delta.1 - Mis.model.1.full$result$PosteriorMean)^2)/mean((delta.1 - deltahat.1)^2))), ylim=c(0,0.3), names.arg = c('ash','mashcommon.10','mashcommon.1','mash.indep.10', 'mash.indep.1', 'mis.10', 'mis.1'), ylab='RRMSE')
+          sqrt(mean((delta.1 - Mis.model.1.full$result$PosteriorMean)^2)/mean((delta.1 - deltahat.1)^2))), ylim=c(0,0.3), names.arg = c('ash','common.10','common.1','mash.10', 'mash.1', 'mis.10', 'mis.1'), las=2, cex.names = 0.7)
 ```
 
 We check the False Positive Rate and True Positive Rate. 
@@ -416,7 +416,7 @@ lines(Indep.10[,'FPR'], Indep.10[,'TPR'])
 lines(Mis.1[,'FPR'], Mis.1[,'TPR'], col='brown')
 lines(Mis.10[,'FPR'], Mis.10[,'TPR'], col='cyan')
 lines(Ash[,'FPR'], Ash[, 'TPR'], col='darkgreen')
-legend('bottomright', c('mashcommon.1','mashcommon.10', 'mash.indep.1', 'mash.indep.10', 'mis.1', 'mis.10', 'ash'),col=c('red','green', 'blue', 'black', 'brown', 'cyan', 'darkgreen'),lty=c(1,1,1,1,1,1,1))}
+legend('bottomright', c('common.1','common.10', 'mash.1', 'mash.10', 'mis.1', 'mis.10', 'ash'),col=c('red','green', 'blue', 'black', 'brown', 'cyan', 'darkgreen'),lty=c(1,1,1,1,1,1,1))}
 ```
 
 The `mashcommonbaseline` model performs better than `mash.indep` model. The choice of the discarded column has larger effect for `mash.indep` model.
