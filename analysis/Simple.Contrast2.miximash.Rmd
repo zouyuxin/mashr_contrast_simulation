@@ -1,0 +1,186 @@
+---
+title: "Simulation with Signal - Compare miximash"
+author: "Yuxin Zou"
+date: 2018-05-19
+output: 
+  html_document:
+    code_folding: hide
+---
+
+```{r read-chunk, include=FALSE, cache=FALSE}
+knitr::read_chunk("chunks.R")
+```
+
+<!-- Update knitr chunk options -->
+```{r knitr-opts-chunk, include=FALSE}
+```
+
+<!-- Insert the date the file was last updated -->
+```{r last-updated, echo=FALSE, results='asis'}
+```
+
+```{r code-version, echo=FALSE, results='asis'}
+```
+
+```{r}
+library(mashr); library(miximash)
+source('../code/plotCormotif.R')
+```
+
+# Simulation Design
+
+In the simulation, $$c_{j2...R} = c_{j1}1 + \delta_{j}$$
+$$\hat{c}_{j}|c_{j} \sim N_{R}(c_{j}, \frac{1}{2}I)$$
+Let L be the contrast matrix. Therefore, $$\hat{\delta}_{j}|\delta_{j} = L\hat{c}_{j}|c_{j} \sim N_{R-1}(\delta_{j}, \frac{1}{2}LL')$$
+
+We first generate the data:
+```{r}
+set.seed(2018)
+data = sim_contrast2(nsamp = 12000, ncond = 8)
+```
+This simulation routine creates a dataset with 8 conditions, and four different types of deviations $\delta_{j}$: null, independent among conditions, condition-specific in condition 2, and shared (equal effects in all conditions). The data contains 10% non-null effects 
+$$\delta_{j} \sim \frac{9}{10}N(0,0)+\frac{1}{30}N(0,I)+\frac{1}{30}N(0,11^{T})+\frac{1}{30}N(0,e_{1}e_{1}^{T})$$
+
+Set up the contrast matrix and the mash contrast data object
+```{r}
+R = 8
+L = diag(R-1)
+L = cbind(rep(-1, R-1), L)
+row.names(L) = c('2-1','3-1','4-1','5-1','6-1','7-1','8-1')
+
+mash_data = mash_set_data(Bhat=data$Chat, Shat=data$Shat)
+mash_data_L = mash_set_data_contrast(mash_data, L)
+```
+
+# Mashcommonbaseline
+Set up the covariance matrices:
+
+```{r}
+# canonical
+U.c = cov_canonical(mash_data_L)
+# data driven
+m.1by1 = mash_1by1(mash_data_L, alpha=0)
+strong = get_significant_results(m.1by1,0.05)
+# only 1 strong samples
+```
+
+Fit `mashcontrast` model
+```{r}
+mashcontrast.model = mash(mash_data_L, U.c, algorithm.version = 'R')
+```
+
+The log likelihood is
+```{r}
+print(get_loglik(mashcontrast.model),digits = 10)
+```
+
+Use `get_significant_results` to find the indices of effects that are “significant”:
+
+```{r}
+length(get_significant_results(mashcontrast.model))
+```
+
+The number of false positive is `r sum(get_significant_results(mashcontrast.model) < 12000-1200)`. 
+
+```{r}
+barplot(get_estimated_pi(mashcontrast.model),las = 2,cex.names = 0.7)
+```
+
+# Mash
+```{r}
+Indep.data = mash_set_data(mash_data_L$Bhat, mash_data_L$Shat)
+Indep.m = mash(Indep.data, U.c)
+```
+
+The log likelihood is
+```{r}
+print(get_loglik(Indep.m),digits = 10)
+```
+
+Use `get_significant_results` to find the indices of effects that are “significant”:
+
+```{r}
+length(get_significant_results(Indep.m))
+```
+
+The number of false positive is `r sum(get_significant_results(Indep.m) < 12000-1200)`. 
+
+```{r}
+barplot(get_estimated_pi(Indep.m),las = 2,cex.names = 0.7)
+```
+
+# Miximash
+
+```{r}
+fit = miximash(mash_data_L$Bhat, mash_data_L$Shat, mess = TRUE, K = 2:6)
+```
+
+Loglikelihood
+```{r}
+plot(2:6, fit$loglike[,2],type = "l",xlab = "K",ylab = "loglike")
+```
+
+```{r}
+plotMotif(fit$allmotif[[2]])
+```
+
+Discoveries: 
+```{r}
+sum(rowSums(fit$lfsr[[1]] <= 0.05) > 0)
+```
+
+# Compare
+
+The RRMSE plot:
+```{r}
+delta = data$C %*% t(L)
+barplot(c(sqrt(mean((delta - m.1by1$result$PosteriorMean)^2)/mean((delta - data$Chat%*%t(L))^2)), 
+          sqrt(mean((delta - mashcontrast.model$result$PosteriorMean)^2)/mean((delta - data$Chat%*%t(L))^2)), 
+          sqrt(mean((delta - Indep.m$result$PosteriorMean)^2)/mean((delta - data$Chat%*%t(L))^2)), 
+          sqrt(mean((delta - fit$post_mean[[1]])^2)/mean((delta - data$Chat%*%t(L))^2))), ylim=c(0,0.8), names.arg = c('ash','mashcommonbaseline', 'mashIndep', 'miximash'), ylab='RRMSE')
+```
+
+We check the False Positive Rate and True Positive Rate. 
+$$FPR = \frac{|N\cap S|}{|N|} \quad TPR = \frac{|CS\cap S|}{|T|} $$
+
+Each effect is treated as a separate discovery in each condition
+```{r}
+delta = data$C %*% t(L)
+
+sign.test.mash = as.matrix(delta)*mashcontrast.model$result$PosteriorMean
+sign.test.Indep = as.matrix(delta)*Indep.m$result$PosteriorMean
+sign.test.ash = as.matrix(delta)*m.1by1$result$PosteriorMean
+sign.test.mix = as.matrix(delta)*fit$post_mean[[1]]
+
+thresh.seq = seq(0, 1, by=0.0005)[-1]
+mashcontrast = matrix(0,length(thresh.seq), 2)
+Indep = matrix(0,length(thresh.seq), 2)
+Ash = matrix(0,length(thresh.seq), 2)
+Mix = matrix(0,length(thresh.seq), 2)
+colnames(mashcontrast) = colnames(Indep) = colnames(Ash) = colnames(Mix) = c('TPR', 'FPR')
+
+for(t in 1:length(thresh.seq)){
+  mashcontrast[t,] = c( sum(sign.test.mash>0 & mashcontrast.model$result$lfsr <= thresh.seq[t])/sum(delta!=0), sum(delta==0 & mashcontrast.model$result$lfsr <=thresh.seq[t])/sum(delta==0))
+  
+  Indep[t,] = c(sum(sign.test.Indep>0& Indep.m$result$lfsr <=thresh.seq[t])/sum(delta!=0),  sum(delta==0& Indep.m$result$lfsr <=thresh.seq[t])/sum(delta==0))
+  
+  Ash[t,] = c(sum(sign.test.ash>0& m.1by1$result$lfsr <=thresh.seq[t])/sum(delta!=0),  sum(delta==0& m.1by1$result$lfsr <=thresh.seq[t])/sum(delta==0))
+  
+  Mix[t,] = c(sum(sign.test.mix>0& fit$lfsr[[1]] <=thresh.seq[t])/sum(delta!=0),  sum(delta==0& fit$lfsr[[1]] <=thresh.seq[t])/sum(delta==0))
+}
+
+```
+
+```{r}
+{plot(mashcontrast[,'FPR'], mashcontrast[,'TPR'], col='red',type='l',ylab="True Positive Rate",xlab="False Positive Rate")
+lines(Indep[,'FPR'], Indep[,'TPR'])
+lines(Ash[,'FPR'], Ash[,'TPR'], col='green')
+lines(Mix[,'FPR'], Mix[,'TPR'], col='cyan')
+legend('bottomright', c('mashcommonbaseline', 'mashIndep', 'ash', 'miximash'),col=c('red','black','green','cyan'),lty=c(1,1,1,1))
+}
+```
+
+# Session information
+
+```{r session-info}
+```

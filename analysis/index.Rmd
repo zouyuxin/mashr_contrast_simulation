@@ -17,6 +17,10 @@ output:
     + When we increase R: [MeanSignalR=50](CompareMeanSignalRecR50.html)
     + Compare `commonbaseline` with Bovy: [Compare with Bovy](MeanSignal_CondnMean.html)
     
+* Comparison:
+    + Compare `mash` with `miximash`: [Mash vs Miximash](CompareMashMiximash.html)
+    + Compare `mashcommonbaseline` with `miximash`: [Mashcommonbaseline vs Miximash](Simple.Contrast2.miximash.html)
+    
 * Outlier 
     There are two kinds of outlier problem in `mash`. 
 
