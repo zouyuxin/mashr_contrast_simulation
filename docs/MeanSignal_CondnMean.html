@@ -341,31 +341,33 @@ div.section {
 <p>Let L be the contrast matrix that substract mean from each sample.</p>
 <p><span class="math display">\[\hat{\delta}_{j}|\delta_{j} \sim N(\delta_{j}, \frac{1}{2}LL&#39;)\]</span> 90% of the true deviations are 0. 10% of the deviation <span class="math inline">\(\delta_{j}\)</span> has correlation that the first c conditions are negatively correlated with the rest conditions.</p>
 <p>We set <span class="math inline">\(c = 2\)</span>.</p>
-<div id="mash" class="section level1">
-<h1>Mash</h1>
+<div id="discard-last-col" class="section level1">
+<h1>Discard last col</h1>
+<div id="mash" class="section level2">
+<h2>Mash</h2>
 <pre><code>##  - Computing 10000 x 290 likelihood matrix.
-##  - Likelihood calculations took 1.41 seconds.
+##  - Likelihood calculations took 1.49 seconds.
 ##  - Fitting model with 290 mixture components.
-##  - Model fitting took 3.38 seconds.
+##  - Model fitting took 3.88 seconds.
 ##  - Computing posterior matrices.
-##  - Computation allocated took 0.21 seconds.</code></pre>
+##  - Computation allocated took 0.23 seconds.</code></pre>
 <p>Using <code>mashcommonbaseline</code>, there are 288 discoveries. The covariance structure found here is: <img src="MeanSignal_CondnMean_files/figure-html/unnamed-chunk-5-1.png" width="672" /></p>
 <p>Recover the last column</p>
-<pre class="r"><code>mashcontrast.model.10.full = mashcontrast.model
-mashcontrast.model.10.full$result = mash_compute_posterior_matrices(g = mashcontrast.model, data = mash_data_L, algorithm.version = &#39;R&#39;, recover=TRUE)</code></pre>
+<pre class="r"><code>mashcontrast.model.10.full = mashcontrast.model.10
+mashcontrast.model.10.full$result = mash_compute_posterior_matrices(g = mashcontrast.model.10, data = mash_data_L, algorithm.version = &#39;R&#39;, recover=TRUE)</code></pre>
 <p>There are 289 discoveries.</p>
 </div>
-<div id="bovy" class="section level1">
-<h1>Bovy</h1>
+<div id="bovy" class="section level2">
+<h2>Bovy</h2>
 <pre><code>##  - Computing 10000 x 307 likelihood matrix.
-##  - Likelihood calculations took 1.18 seconds.
+##  - Likelihood calculations took 1.26 seconds.
 ##  - Fitting model with 307 mixture components.
-##  - Model fitting took 2.97 seconds.
+##  - Model fitting took 3.10 seconds.
 ##  - Computing posterior matrices.
-##  - Computation allocated took 0.14 seconds.</code></pre>
-<p>Using <code>mashcommonbaseline</code>, there are 290 discoveries. The covariance structure found here is: <img src="MeanSignal_CondnMean_files/figure-html/unnamed-chunk-8-1.png" width="672" /></p>
+##  - Computation allocated took 0.15 seconds.</code></pre>
+<p>Using <code>Bovy</code>, there are 290 discoveries. The covariance structure found here is: <img src="MeanSignal_CondnMean_files/figure-html/unnamed-chunk-8-1.png" width="672" /></p>
 <p>The row means of the posterior mean matrix are not 0.</p>
-<pre class="r"><code>rowMeans(mashcontrast.model$result$PosteriorMean)[1:6]</code></pre>
+<pre class="r"><code>rowMeans(Bovy.model.10$result$PosteriorMean)[1:6]</code></pre>
 <pre><code>##      sample_1      sample_2      sample_3      sample_4      sample_5 
 ## -0.0041257029  0.0027218307  0.0008907543  0.0002479279 -0.0002353182 
 ##      sample_6 
@@ -379,8 +381,44 @@ mashcontrast.model.10.full$result = mash_compute_posterior_matrices(g = mashcont
 <li><code>Bovy</code> estimates</li>
 </ul>
 <p><img src="MeanSignal_CondnMean_files/figure-html/unnamed-chunk-12-1.png" width="672" /></p>
-<pre class="r"><code>mean((mashcontrast.model$result$PosteriorMean - mashcontrast.model.10.full$result$PosteriorMean)^2)</code></pre>
+<pre class="r"><code>mean((Bovy.model.10$result$PosteriorMean - mashcontrast.model.10.full$result$PosteriorMean)^2)</code></pre>
 <pre><code>## [1] 0.0001147391</code></pre>
+</div>
+</div>
+<div id="discard-first-col" class="section level1">
+<h1>Discard first col</h1>
+<div id="mash-1" class="section level2">
+<h2>Mash</h2>
+<pre><code>##  - Computing 10000 x 290 likelihood matrix.
+##  - Likelihood calculations took 1.32 seconds.
+##  - Fitting model with 290 mixture components.
+##  - Model fitting took 3.59 seconds.
+##  - Computing posterior matrices.
+##  - Computation allocated took 0.11 seconds.</code></pre>
+<p>Using <code>mashcommonbaseline</code>, there are 283 discoveries. The covariance structure found here is: <img src="MeanSignal_CondnMean_files/figure-html/unnamed-chunk-15-1.png" width="672" /></p>
+<p>Recover the last column</p>
+<pre class="r"><code>mashcontrast.model.1.full = mashcontrast.model.1
+mashcontrast.model.1.full$result = mash_compute_posterior_matrices(g = mashcontrast.model.1, data = mash_data_L, algorithm.version = &#39;R&#39;, recover=TRUE)</code></pre>
+<p>There are 285 discoveries.</p>
+</div>
+<div id="bovy-1" class="section level2">
+<h2>Bovy</h2>
+<pre><code>##  - Computing 10000 x 307 likelihood matrix.
+##  - Likelihood calculations took 1.30 seconds.
+##  - Fitting model with 307 mixture components.
+##  - Model fitting took 3.41 seconds.
+##  - Computing posterior matrices.
+##  - Computation allocated took 0.17 seconds.</code></pre>
+<p>Using <code>Bovy</code>, there are 290 discoveries. The covariance structure found here is: <img src="MeanSignal_CondnMean_files/figure-html/unnamed-chunk-18-1.png" width="672" /></p>
+<p>The row means of the posterior mean matrix are not 0.</p>
+<pre class="r"><code>rowMeans(Bovy.model.1$result$PosteriorMean)[1:6]</code></pre>
+<pre><code>##      sample_1      sample_2      sample_3      sample_4      sample_5 
+## -0.0041257029  0.0027218307  0.0008907543  0.0002479279 -0.0002353182 
+##      sample_6 
+## -0.0029559848</code></pre>
+<pre class="r"><code>mean((Bovy.model.1$result$PosteriorMean - mashcontrast.model.1.full$result$PosteriorMean)^2)</code></pre>
+<pre><code>## [1] 0.05565642</code></pre>
+</div>
 </div>
 <div id="compare-models" class="section level1">
 <h1>Compare models</h1>
@@ -388,24 +426,40 @@ mashcontrast.model.10.full$result = mash_compute_posterior_matrices(g = mashcont
 <pre class="r"><code>delta.10 = data$C - rowMeans(data$C)
 deltahat.10 = data$Chat - rowMeans(data$Chat)
 
-barplot(c(sqrt(mean((delta.10 - mashcontrast.model.10.full$result$PosteriorMean)^2)/mean((delta.10 - deltahat.10)^2)), sqrt(mean((delta.10 - mashcontrast.model$result$PosteriorMean)^2)/mean((delta.10 - deltahat.10)^2))), ylim=c(0,0.2), names.arg = c(&#39;mashcommon.10&#39;,&#39;Bovy&#39;), ylab=&#39;RRMSE&#39;)</code></pre>
-<p><img src="MeanSignal_CondnMean_files/figure-html/unnamed-chunk-14-1.png" width="672" /></p>
+delta.1 = delta.10[, c(2:10, 1)]
+deltahat.1 = deltahat.10[, c(2:10, 1)]
+
+barplot(c(sqrt(mean((delta.10 - mashcontrast.model.10.full$result$PosteriorMean)^2)/mean((delta.10 - deltahat.10)^2)), 
+          sqrt(mean((delta.10 - Bovy.model.10$result$PosteriorMean)^2)/mean((delta.10 - deltahat.10)^2)),
+          sqrt(mean((delta.1 - mashcontrast.model.1.full$result$PosteriorMean)^2)/mean((delta.1 - deltahat.1)^2)),
+          sqrt(mean((delta.10 - Bovy.model.1$result$PosteriorMean)^2)/mean((delta.10 - deltahat.10)^2))), ylim=c(0,0.2), names.arg = c(&#39;mashcommon.10&#39;,&#39;Bovy.10&#39;, &#39;mashcommon.1&#39;,&#39;Bovy.1&#39;), ylab=&#39;RRMSE&#39;)</code></pre>
+<p><img src="MeanSignal_CondnMean_files/figure-html/unnamed-chunk-21-1.png" width="672" /></p>
 <p>We check the False Positive Rate and True Positive Rate. <span class="math display">\[FPR = \frac{|N\cap S|}{|N|} \quad TPR = \frac{|CS\cap S|}{|T|} \]</span></p>
 <pre class="r"><code>sign.test.mash.10 = as.matrix(delta.10)*mashcontrast.model.10.full$result$PosteriorMean
-sign.test.bovy = as.matrix(delta.10)*mashcontrast.model$result$PosteriorMean
+sign.test.bovy.10 = as.matrix(delta.10)*Bovy.model.10$result$PosteriorMean
+
+sign.test.mash.1 = as.matrix(delta.1)*mashcontrast.model.1.full$result$PosteriorMean
+sign.test.bovy.1 = as.matrix(delta.10)*Bovy.model.1$result$PosteriorMean
 
 
 thresh.seq = seq(0, 1, by=0.0005)[-1]
 mashcontrast.10 = matrix(0,length(thresh.seq), 2)
-bovy = matrix(0,length(thresh.seq), 2)
-colnames(mashcontrast.10) = colnames(bovy) = c(&#39;TPR&#39;, &#39;FPR&#39;)
+bovy.10 = matrix(0,length(thresh.seq), 2)
+colnames(mashcontrast.10) = colnames(bovy.10) = c(&#39;TPR&#39;, &#39;FPR&#39;)
+mashcontrast.1 = matrix(0,length(thresh.seq), 2)
+bovy.1 = matrix(0,length(thresh.seq), 2)
+colnames(mashcontrast.1) = colnames(bovy.1) = c(&#39;TPR&#39;, &#39;FPR&#39;)
 
 for(t in 1:length(thresh.seq)){
   mashcontrast.10[t,] = c(sum(sign.test.mash.10&gt;0 &amp; mashcontrast.model.10.full$result$lfsr &lt;= thresh.seq[t])/sum(delta.10!=0), sum(delta.10==0 &amp; mashcontrast.model.10.full$result$lfsr &lt;=thresh.seq[t])/sum(delta.10==0))
   
-  bovy[t,] = c(sum(sign.test.bovy&gt;0&amp; mashcontrast.model$result$lfsr &lt;=thresh.seq[t])/sum(delta.10!=0),  sum(delta.10==0&amp; mashcontrast.model$result$lfsr &lt;=thresh.seq[t])/sum(delta.10==0))
+  bovy.10[t,] = c(sum(sign.test.bovy.10&gt;0&amp; Bovy.model.10$result$lfsr &lt;=thresh.seq[t])/sum(delta.10!=0),  sum(delta.10==0&amp; Bovy.model.10$result$lfsr &lt;=thresh.seq[t])/sum(delta.10==0))
+  
+  mashcontrast.1[t,] = c(sum(sign.test.mash.1&gt;0 &amp; mashcontrast.model.1.full$result$lfsr &lt;= thresh.seq[t])/sum(delta.1!=0), sum(delta.1==0 &amp; mashcontrast.model.1.full$result$lfsr &lt;=thresh.seq[t])/sum(delta.1==0))
+  
+  bovy.1[t,] = c(sum(sign.test.bovy.1&gt;0&amp; Bovy.model.1$result$lfsr &lt;=thresh.seq[t])/sum(delta.10!=0),  sum(delta.10==0&amp; Bovy.model.1$result$lfsr &lt;=thresh.seq[t])/sum(delta.10==0))
 }</code></pre>
-<p><img src="MeanSignal_CondnMean_files/figure-html/unnamed-chunk-16-1.png" width="672" /></p>
+<p><img src="MeanSignal_CondnMean_files/figure-html/unnamed-chunk-23-1.png" width="672" /></p>
 </div>
 
 <!-- Adjust MathJax settings so that all math formulae are shown using
