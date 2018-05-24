@@ -44,6 +44,7 @@ C = 2
 data = sim.mean.sig(nsamp=10000, ncond=C)
 ```
 
+# Discard last col
 ```{r, echo=FALSE}
 L = matrix(-1/R, R, R)
 diag(L) = (R-1)/R
@@ -51,7 +52,7 @@ row.names(L) = colnames(data$Chat)
 mash_data = mash_set_data(Bhat=data$Chat, Shat=data$Shat)
 ```
 
-# Mash
+## Mash
 
 ```{r, echo=FALSE}
 L.10 = L[1:R-1,]
@@ -70,23 +71,23 @@ mash_data.center$Bhat = apply(mash_data.center$Bhat, 2, function(x) x - mean(x))
 U.pca = cov_pca(mash_data.center,2,strong)
 U.ed = cov_ed(mash_data.center, U.pca, strong)
 
-mashcontrast.model = mash(mash_data_L, c(U.c, U.ed), algorithm.version = 'R')
+mashcontrast.model.10 = mash(mash_data_L, c(U.c, U.ed), algorithm.version = 'R')
 ```
 
-Using `mashcommonbaseline`, there are `r length(get_significant_results(mashcontrast.model))` discoveries. The covariance structure found here is:
+Using `mashcommonbaseline`, there are `r length(get_significant_results(mashcontrast.model.10))` discoveries. The covariance structure found here is:
 ```{r, echo=FALSE}
-barplot(get_estimated_pi(mashcontrast.model),las = 2, cex.names = 0.7)
+barplot(get_estimated_pi(mashcontrast.model.10),las = 2, cex.names = 0.7)
 ```
 
 Recover the last column
 ```{r}
-mashcontrast.model.10.full = mashcontrast.model
-mashcontrast.model.10.full$result = mash_compute_posterior_matrices(g = mashcontrast.model, data = mash_data_L, algorithm.version = 'R', recover=TRUE)
+mashcontrast.model.10.full = mashcontrast.model.10
+mashcontrast.model.10.full$result = mash_compute_posterior_matrices(g = mashcontrast.model.10, data = mash_data_L, algorithm.version = 'R', recover=TRUE)
 ```
 
 There are `r length(get_significant_results(mashcontrast.model.10.full))` discoveries.
 
-# Bovy
+## Bovy
 ```{r, echo=FALSE}
 mash_data_L = mash_set_data_contrast(mash_data, L)
 U.c = cov_canonical(mash_data_L)
@@ -106,17 +107,17 @@ U.ed = cov_ed(mash_data.center, U.pca, strong)
 L.10 = L[1:(R-1),]
 mash_data_L_10 = mash_set_data_contrast(mash_data, L.10)
 mash_data_L_10$Shat_alpha = mash_data_L$Shat_alpha
-mashcontrast.model = mash(mash_data_L_10, c(U.c, U.ed), algorithm.version = 'R', Bovy=TRUE)
+Bovy.model.10 = mash(mash_data_L_10, c(U.c, U.ed), algorithm.version = 'R', Bovy=TRUE)
 ```
 
-Using `mashcommonbaseline`, there are `r length(get_significant_results(mashcontrast.model))` discoveries. The covariance structure found here is:
+Using `Bovy`, there are `r length(get_significant_results(Bovy.model.10))` discoveries. The covariance structure found here is:
 ```{r, echo=FALSE}
-barplot(get_estimated_pi(mashcontrast.model),las = 2, cex.names = 0.7)
+barplot(get_estimated_pi(Bovy.model.10),las = 2, cex.names = 0.7)
 ```
 
 The row means of the posterior mean matrix are not 0.
 ```{r}
-rowMeans(mashcontrast.model$result$PosteriorMean)[1:6]
+rowMeans(Bovy.model.10$result$PosteriorMean)[1:6]
 ```
 
 * Original estimates
@@ -152,10 +153,10 @@ ggplot(stronggenePost, aes(y = EffectSize, x = Group, color=Group)) +
 
 ```{r echo=FALSE}
 # Improved
-stronggenePost = data.frame(mashcontrast.model$result$PosteriorMean[9211,])
+stronggenePost = data.frame(Bovy.model.10$result$PosteriorMean[9211,])
 colnames(stronggenePost) = 'EffectSize'
 stronggenePost$Group = row.names(stronggenePost)
-stronggenePost$se = mashcontrast.model$result$PosteriorSD[9211,]
+stronggenePost$se = Bovy.model.10$result$PosteriorSD[9211,]
 ggplot(stronggenePost, aes(y = EffectSize, x = Group, color=Group)) + 
   geom_point() + 
   geom_errorbar(aes(ymin=EffectSize-1.96*se, ymax=EffectSize+1.96*se), width=0.4) + 
@@ -163,7 +164,82 @@ ggplot(stronggenePost, aes(y = EffectSize, x = Group, color=Group)) +
 ```
 
 ```{r}
-mean((mashcontrast.model$result$PosteriorMean - mashcontrast.model.10.full$result$PosteriorMean)^2)
+mean((Bovy.model.10$result$PosteriorMean - mashcontrast.model.10.full$result$PosteriorMean)^2)
+```
+
+# Discard first col
+
+## Mash
+
+```{r, echo=FALSE}
+L.1 = L[2:R,]
+mash_data_L = mash_set_data_contrast(mash_data, L.1)
+U.c = cov_canonical(mash_data_L)
+
+# data driven
+# select max
+m.1by1 = mash_1by1(mash_data_L, alpha=0)
+strong = get_significant_results(m.1by1,0.05)
+# center Z
+mash_data.center = mash_data_L
+mash_data.center$Bhat = mash_data_L$Bhat/mash_data_L$Shat # obtain z
+mash_data.center$Shat = matrix(1, nrow(mash_data_L$Bhat),ncol(mash_data_L$Bhat))
+mash_data.center$Bhat = apply(mash_data.center$Bhat, 2, function(x) x - mean(x))
+U.pca = cov_pca(mash_data.center,2,strong)
+U.ed = cov_ed(mash_data.center, U.pca, strong)
+
+mashcontrast.model.1 = mash(mash_data_L, c(U.c, U.ed), algorithm.version = 'R')
+```
+
+Using `mashcommonbaseline`, there are `r length(get_significant_results(mashcontrast.model.1))` discoveries. The covariance structure found here is:
+```{r, echo=FALSE}
+barplot(get_estimated_pi(mashcontrast.model.1),las = 2, cex.names = 0.7)
+```
+
+Recover the last column
+```{r}
+mashcontrast.model.1.full = mashcontrast.model.1
+mashcontrast.model.1.full$result = mash_compute_posterior_matrices(g = mashcontrast.model.1, data = mash_data_L, algorithm.version = 'R', recover=TRUE)
+```
+
+There are `r length(get_significant_results(mashcontrast.model.1.full))` discoveries.
+
+## Bovy
+```{r, echo=FALSE}
+mash_data_L = mash_set_data_contrast(mash_data, L)
+U.c = cov_canonical(mash_data_L)
+
+# data driven
+# select max
+m.1by1 = mash_1by1(mash_data_L, alpha=0)
+strong = get_significant_results(m.1by1,0.05)
+# center Z
+mash_data.center = mash_data_L
+mash_data.center$Bhat = mash_data_L$Bhat/mash_data_L$Shat # obtain z
+mash_data.center$Shat = matrix(1, nrow(mash_data_L$Bhat),ncol(mash_data_L$Bhat))
+mash_data.center$Bhat = apply(mash_data.center$Bhat, 2, function(x) x - mean(x))
+U.pca = cov_pca(mash_data.center,2,strong)
+U.ed = cov_ed(mash_data.center, U.pca, strong)
+
+L.1 = L[2:R,]
+mash_data_L_1 = mash_set_data_contrast(mash_data, L.1)
+mash_data_L_1$Shat_alpha = mash_data_L$Shat_alpha
+Bovy.model.1 = mash(mash_data_L_1, c(U.c, U.ed), algorithm.version = 'R', Bovy=TRUE)
+```
+
+Using `Bovy`, there are `r length(get_significant_results(Bovy.model.1))` discoveries. The covariance structure found here is:
+```{r, echo=FALSE}
+barplot(get_estimated_pi(Bovy.model.1),las = 2, cex.names = 0.7)
+```
+
+The row means of the posterior mean matrix are not 0.
+```{r}
+rowMeans(Bovy.model.1$result$PosteriorMean)[1:6]
+```
+
+
+```{r}
+mean((Bovy.model.1$result$PosteriorMean - mashcontrast.model.1.full$result$PosteriorMean)^2)
 ```
 
 # Compare models
@@ -173,7 +249,13 @@ The RRMSE plot:
 delta.10 = data$C - rowMeans(data$C)
 deltahat.10 = data$Chat - rowMeans(data$Chat)
 
-barplot(c(sqrt(mean((delta.10 - mashcontrast.model.10.full$result$PosteriorMean)^2)/mean((delta.10 - deltahat.10)^2)), sqrt(mean((delta.10 - mashcontrast.model$result$PosteriorMean)^2)/mean((delta.10 - deltahat.10)^2))), ylim=c(0,0.2), names.arg = c('mashcommon.10','Bovy'), ylab='RRMSE')
+delta.1 = delta.10[, c(2:10, 1)]
+deltahat.1 = deltahat.10[, c(2:10, 1)]
+
+barplot(c(sqrt(mean((delta.10 - mashcontrast.model.10.full$result$PosteriorMean)^2)/mean((delta.10 - deltahat.10)^2)), 
+          sqrt(mean((delta.10 - Bovy.model.10$result$PosteriorMean)^2)/mean((delta.10 - deltahat.10)^2)),
+          sqrt(mean((delta.1 - mashcontrast.model.1.full$result$PosteriorMean)^2)/mean((delta.1 - deltahat.1)^2)),
+          sqrt(mean((delta.10 - Bovy.model.1$result$PosteriorMean)^2)/mean((delta.10 - deltahat.10)^2))), ylim=c(0,0.2), names.arg = c('mashcommon.10','Bovy.10', 'mashcommon.1','Bovy.1'), ylab='RRMSE')
 ```
 
 We check the False Positive Rate and True Positive Rate. 
@@ -181,23 +263,35 @@ $$FPR = \frac{|N\cap S|}{|N|} \quad TPR = \frac{|CS\cap S|}{|T|} $$
 
 ```{r}
 sign.test.mash.10 = as.matrix(delta.10)*mashcontrast.model.10.full$result$PosteriorMean
-sign.test.bovy = as.matrix(delta.10)*mashcontrast.model$result$PosteriorMean
+sign.test.bovy.10 = as.matrix(delta.10)*Bovy.model.10$result$PosteriorMean
+
+sign.test.mash.1 = as.matrix(delta.1)*mashcontrast.model.1.full$result$PosteriorMean
+sign.test.bovy.1 = as.matrix(delta.10)*Bovy.model.1$result$PosteriorMean
 
 
 thresh.seq = seq(0, 1, by=0.0005)[-1]
 mashcontrast.10 = matrix(0,length(thresh.seq), 2)
-bovy = matrix(0,length(thresh.seq), 2)
-colnames(mashcontrast.10) = colnames(bovy) = c('TPR', 'FPR')
+bovy.10 = matrix(0,length(thresh.seq), 2)
+colnames(mashcontrast.10) = colnames(bovy.10) = c('TPR', 'FPR')
+mashcontrast.1 = matrix(0,length(thresh.seq), 2)
+bovy.1 = matrix(0,length(thresh.seq), 2)
+colnames(mashcontrast.1) = colnames(bovy.1) = c('TPR', 'FPR')
 
 for(t in 1:length(thresh.seq)){
   mashcontrast.10[t,] = c(sum(sign.test.mash.10>0 & mashcontrast.model.10.full$result$lfsr <= thresh.seq[t])/sum(delta.10!=0), sum(delta.10==0 & mashcontrast.model.10.full$result$lfsr <=thresh.seq[t])/sum(delta.10==0))
   
-  bovy[t,] = c(sum(sign.test.bovy>0& mashcontrast.model$result$lfsr <=thresh.seq[t])/sum(delta.10!=0),  sum(delta.10==0& mashcontrast.model$result$lfsr <=thresh.seq[t])/sum(delta.10==0))
+  bovy.10[t,] = c(sum(sign.test.bovy.10>0& Bovy.model.10$result$lfsr <=thresh.seq[t])/sum(delta.10!=0),  sum(delta.10==0& Bovy.model.10$result$lfsr <=thresh.seq[t])/sum(delta.10==0))
+  
+  mashcontrast.1[t,] = c(sum(sign.test.mash.1>0 & mashcontrast.model.1.full$result$lfsr <= thresh.seq[t])/sum(delta.1!=0), sum(delta.1==0 & mashcontrast.model.1.full$result$lfsr <=thresh.seq[t])/sum(delta.1==0))
+  
+  bovy.1[t,] = c(sum(sign.test.bovy.1>0& Bovy.model.1$result$lfsr <=thresh.seq[t])/sum(delta.10!=0),  sum(delta.10==0& Bovy.model.1$result$lfsr <=thresh.seq[t])/sum(delta.10==0))
 }
 ```
 
 ```{r, echo=FALSE}
 {plot(mashcontrast.10[,'FPR'], mashcontrast.10[,'TPR'], col='red',type='l',xlab = 'FPR', ylab='TPR', main='True Positive vs False Positive')
-lines(bovy[,'FPR'], bovy[,'TPR'], col='cyan')
-legend('bottomright', c('mashcommon','bovy'),col=c('red', 'cyan'),lty=c(1,1))}
+lines(bovy.10[,'FPR'], bovy.10[,'TPR'], col='cyan')
+lines(bovy.1[,'FPR'], bovy.1[,'TPR'], col='green')
+lines(mashcontrast.1[,'FPR'], mashcontrast.1[,'TPR'], col='black')
+legend('bottomright', c('mashcommon.10','bovy.10','bovy.1','mashcommon.1'),col=c('red', 'cyan', 'green', 'black'),lty=c(1,1,1,1))}
 ```
