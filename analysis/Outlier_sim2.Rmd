@@ -1,0 +1,169 @@
+---
+title: "Outlier Simulation"
+author: "Yuxin Zou"
+date: 2018-1-23
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r read-chunk, include=FALSE, cache=FALSE}
+knitr::read_chunk("chunks.R")
+```
+
+<!-- Update knitr chunk options -->
+```{r knitr-opts-chunk, include=FALSE}
+```
+
+<!-- Insert the date the file was last updated -->
+```{r last-updated, echo=FALSE, results='asis'}
+```
+
+<!-- Insert the R version (Git commit SHA1) if Git repository exists and R
+ package git2r is installed -->
+```{r R-version, echo=FALSE, results='asis'}
+```
+
+```{r, echo=FALSE}
+# TEMPORARY.
+knitr::opts_chunk$set(eval = TRUE)
+```
+
+```{r}
+library(mvtnorm); library(mashr)
+```
+
+# Generate data
+```{r echo=FALSE}
+set.seed(10)
+nsamp = 500
+
+B.0 = matrix(0,nsamp,2)
+b = rnorm(nsamp)
+B.1 = cbind(b[1:250],b[1:250])
+B.2 = cbind(b[251:500],b[251:500])
+b.out = rnorm(nsamp)
+B.outlier = cbind(b.out, 2*b.out)
+
+B = rbind(B.0, B.1, B.2, B.outlier)
+colnames(B) = c('x','y')
+
+# Add error
+Shat = matrix(0.05, nrow = nrow(B), ncol = ncol(B))
+E = matrix(rnorm(length(Shat), mean = 0, sd = Shat), nrow = nrow(B),
+             ncol = ncol(B))
+Bhat = B + E
+
+{plot(Bhat[1:1000,1], Bhat[1:1000,2], xlim=range(Bhat[,1]), ylim=range(Bhat[,2]), xlab = 'x', ylab='y')
+points(Bhat[1001:1500,1], Bhat[1001:1500,2], col='red')}
+```
+
+Mash with all correct covariance structure:
+```{r}
+mash_data = mash_set_data(Bhat = Bhat, Shat = Shat)
+U.c = cov_canonical(mash_data, cov_methods = 'equal_effects')
+U.c = c(U.c, list('inv_effects' = matrix(c(1,2,2,4),2,2)))
+mash.model = mash(mash_data, U.c)
+barplot(get_estimated_pi(mash.model), las=2, cex.names = 0.7)
+length(get_significant_results(mash.model))
+```
+
+```{r}
+{plot(mash.model$result$PosteriorMean[1:1000,1], mash.model$result$PosteriorMean[1:1000,2])
+points(mash.model$result$PosteriorMean[1001:1500,1], mash.model$result$PosteriorMean[1001:1500,2], col='red')}
+```
+
+Mash without one covariance structure:
+
+```{r}
+mash_data = mash_set_data(Bhat = Bhat, Shat = Shat)
+U.c = cov_canonical(mash_data, cov_methods = 'equal_effects')
+mash.model.o = mash(mash_data, U.c)
+barplot(get_estimated_pi(mash.model.o), las=2, cex.names = 0.7)
+length(get_significant_results(mash.model.o))
+```
+
+```{r}
+which(get_significant_results(mash.model.o) > 1000)
+loglik = mash_compute_vloglik(mash.model.o, mash_data)
+hist(loglik)
+which(loglik < -200)
+```
+
+```{r}
+{plot(mash.model.o$result$PosteriorMean[1:1000,1], mash.model.o$result$PosteriorMean[1:1000,2])
+points(mash.model.o$result$PosteriorMean[1001:1500,1], mash.model.o$result$PosteriorMean[1001:1500,2], col='red')}
+```
+
+```{r}
+# lower probability
+p = numeric(nsamp)
+for (i in 1:nsamp){
+  p[i] = pmvnorm(lower=-Inf, upper=Bhat[i,], mean=rep(0,2), sigma=rbind(c(1+0.05^2, 1),c(1, 1+0.05^2)))
+}
+p.small = ifelse(p > 0.5, 1-p,p)
+
+M.dist = numeric(nsamp)
+for(i in 1:nsamp){
+  M.dist[i] = t(Bhat[i,]) %*% solve(rbind(c(1+0.05^2, 1),c(1, 1+0.05^2))) %*% Bhat[i,]
+}
+
+{qqplot(qchisq(ppoints(500), df = 2), M.dist,
+       main = expression("Q-Q plot for" ~~ {chi^2}[nu == 2]))
+qqline(M.dist, distribution = function(p) qchisq(p, df = 2),
+       prob = c(0.1, 0.6), col = 2)}
+```
+
+$$\left(\begin{array}{c} \hat{x} \\ \hat{y}\end{array} \right) | \left(\begin{array}{c} x \\ y \end{array} \right) \sim N(\left(\begin{array}{c} x \\ y\end{array} \right), \left( \begin{array}{c c} 0.05^2 & 0 \\
+0 & 0.05^2 \end{array} \right))$$
+$$\left(\begin{array}{c} x \\ y \end{array} \right) \sim \frac{1}{2} \delta_{0} + \frac{1}{2} N(\left(\begin{array}{c} 0 \\ 0\end{array} \right), \left( \begin{array}{c c} 1 & 1 \\
+1 & 1 \end{array} \right))$$
+
+$$\Rightarrow$$ $$\left(\begin{array}{c} \hat{x} \\ \hat{y}\end{array} \right) \sim \frac{1}{2} N(0, \left( \begin{array}{c c} 0.05^2 & 0 \\
+0 & 0.05^2 \end{array} \right)) + \frac{1}{2} N(0, \left( \begin{array}{c c} 1+0.05^2 & 1 \\
+1 & 1+0.05^2 \end{array} \right))$$ 
+
+```{r}
+which(0.5 * dmvnorm(Bhat, mean = rep(0,2), sigma=diag(0.05^2, 2)) + 0.5 * dmvnorm(Bhat, mean = rep(0,2), sigma=rbind(c(1+0.05^2, 1),c(1, 1+0.05^2))))
+```
+
+```{r echo=FALSE}
+{plot(Bhat[1:1000,1], Bhat[1:1000,2], xlim=range(Bhat[,1]), ylim=range(Bhat[,2]), xlab = 'x', ylab='y')
+points(Bhat[1001:1010, 1], Bhat[1001:1010,2], col='red')
+points(Bhat[1011:1020,1], Bhat[1011:1020,2], col='blue')}
+```
+
+# Identify outlier
+
+We want to identify red points as outliers, but blue points are not.
+
+Firstly, we decompose $\Sigma$ using eigenvalue decomposition, $\Sigma = QDQ'$
+
+```{r}
+eigen.sigma = eigen(matrix(c(1,1,1,1),2,2))
+```
+
+We can transform the $\Sigma$ to identity matrix, $D^{-1/2}Q' \Sigma = I$.
+
+We apply this transfermation on (x y)'.
+
+```{r}
+diag.inv = eigen.sigma$values^{-0.5}
+diag.inv[diag.inv == Inf] = 0
+
+B.tran = t(t(B %*% eigen.sigma$vectors) * diag.inv)
+```
+
+```{r echo=FALSE}
+{plot(B.tran[,1], B.tran[,2], xlim=range(B.tran[,1]), ylim=range(B.tran[,2]), xlab = 'x', ylab='y')
+points(Bhat.tran[1001:1010, 1], Bhat.tran[1001:1010,2], col='red')
+points(Bhat.tran[1011:1020,1], Bhat.tran[1011:1020,2], col='blue')}
+```
+
+# Session information
+
+<!-- Insert the session information into the document -->
+```{r session-info}
+```

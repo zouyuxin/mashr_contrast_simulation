@@ -1,0 +1,107 @@
+---
+title: "MASH-Flash 1 factor"
+author: "Yuxin Zou"
+date: 2018-01-22
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r read-chunk, include=FALSE, cache=FALSE}
+knitr::read_chunk("chunks.R")
+```
+
+<!-- Update knitr chunk options -->
+```{r knitr-opts-chunk, include=FALSE}
+```
+
+<!-- Insert the date the file was last updated -->
+```{r last-updated, echo=FALSE, results='asis'}
+```
+
+<!-- Insert the R version (Git commit SHA1) if Git repository exists and R
+ package git2r is installed -->
+```{r R-version, echo=FALSE, results='asis'}
+```
+
+```{r, echo=FALSE}
+# TEMPORARY.
+knitr::opts_chunk$set(eval = TRUE)
+```
+
+
+```{r echo=FALSE}
+library(flashr)
+library(mashr)
+library(corrplot)
+source('../code/sim.R')
+```
+
+# Generate data
+
+```{r}
+set.seed(50)
+data = sim(nsamp=1000, err_sd = 0.05)
+```
+
+* `flashr` Factorization
+
+```{r eval=FALSE}
+z = data$Bhat/data$Shat
+# center
+Z.center = apply(z, 2, function(x) x - mean(x))
+
+fdata = flash_set_data(Z.center)
+fm = flash(fdata,greedy = TRUE, backfit = TRUE)
+
+```
+
+The factor structures:
+
+```{r echo=FALSE}
+factors = flash_get_ldf(fm)$f
+pve.order = order(flash_get_pve(fm), decreasing = TRUE)
+
+par(mfrow=c(2,2))
+for(i in pve.order){
+  barplot(factors[,i], main=paste0('Factor ',i, ' pve= ', round(flash_get_pve(fm)[i],3)), las=2, cex.names = 0.7)
+}
+par(mfrow=c(1,1))
+```
+
+# Apply `mash` without factor rank 1 covariance
+
+```{r echo=FALSE}
+mash_data = mash_set_data(Bhat = data$Bhat, Shat = data$Shat)
+U.c = cov_canonical(mash_data)
+U.flash = c(list("tFlash" = t(flash_get_lf(fm)) %*% flash_get_lf(fm) / nrow(mash_data$Bhat)))
+
+U.ed = cov_ed(mash_data, U.flash)
+mash_model = mash(mash_data, c(U.c,U.ed), algorithm.version = 'R', verbose = FALSE)
+barplot(get_estimated_pi(mash_model), las=2, cex.names = 0.7)
+```
+
+The `mash` model puts the majority weights on `tFlash`. There are `r length(get_significant_results(mash_model))` siginificant findings. The log likelihood is `r get_loglik(mash_model)`.
+
+# Apply `mash` with factor rank 1 covariance
+
+```{r echo=FALSE}
+U.flash.1 = c(mashr::cov_from_factors(t(factors), "Flash"),
+            list("tFlash" = t(flash_get_lf(fm)) %*% flash_get_lf(fm) / nrow(mash_data$Bhat)))
+
+U.ed.1 = cov_ed(mash_data, U.flash.1)
+mash_model.1 = mash(mash_data, c(U.c,U.ed.1), algorithm.version = 'R', verbose = FALSE)
+barplot(get_estimated_pi(mash_model.1), las=2, cex.names = 0.7)
+```
+The `mash` model identifies the covariacne structure correctly. There are `r length(get_significant_results(mash_model.1))` siginificant findings. The log likelihood is `r get_loglik(mash_model.1)`.
+
+With the correct covariance struture, the `mash` model has a much higher likelihood value. Adding rank 1 factor covariance improve the fitting.
+
+# Session information
+
+<!-- Insert the session information into the document -->
+```{r session-info}
+```
+

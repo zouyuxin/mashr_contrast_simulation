@@ -1,0 +1,54 @@
+---
+title: "Comparing with mean (with signal) Recover - miximash"
+author: "Yuxin Zou"
+date: 2018-05-19
+output: 
+  html_document:
+    code_folding: hide
+---
+```{r read-chunk, include=FALSE, cache=FALSE}
+knitr::read_chunk("chunks.R")
+```
+
+<!-- Update knitr chunk options -->
+```{r knitr-opts-chunk, include=FALSE}
+```
+
+<!-- Insert the date the file was last updated -->
+```{r last-updated, echo=FALSE, results='asis'}
+```
+
+```{r code-version, echo=FALSE, results='asis'}
+```
+
+```{r, echo=FALSE}
+library(mashr)
+library(corrplot); library(ggplot2)
+source('../code/sim_mean_sig.R')
+source('../code/MashSource.R')
+```
+
+The data contains 10 conditions with 10% non-null samples. For the non-null samples, it has equal effects in the first c conditions. 
+
+Let L be the contrast matrix that subtract mean from each sample.
+
+$$\hat{\delta}_{j}|\delta_{j} \sim N(\delta_{j}, \frac{1}{2}LL')$$
+90% of the true deviations are 0. 10% of the deviation $\delta_{j}$ has correlation that the first c conditions are negatively correlated with the rest conditions.
+
+
+We set $c = 2$.
+```{r data}
+set.seed(1)
+R = 10
+C = 2
+data = sim.mean.sig(nsamp=10000, ncond=C)
+```
+
+```{r}
+L = matrix(-1/R, R, R)
+diag(L) = (R-1)/R
+row.names(L) = colnames(data$Chat)
+mash_data = mash_set_data(Bhat=data$Chat, Shat=data$Shat)
+mash_data_L = mash_set_data_contrast(mash_data, L)
+m.1by1 = mash_1by1(mash_data_L)
+```

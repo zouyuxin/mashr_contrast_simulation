@@ -1,0 +1,101 @@
+---
+title: "Mash compared with miximash"
+author: "Yuxin Zou"
+date: 2018-05-19
+output: 
+  html_document:
+    code_folding: hide
+---
+
+```{r read-chunk, include=FALSE, cache=FALSE}
+knitr::read_chunk("chunks.R")
+```
+
+<!-- Update knitr chunk options -->
+```{r knitr-opts-chunk, include=FALSE}
+```
+
+<!-- Insert the date the file was last updated -->
+```{r last-updated, echo=FALSE, results='asis'}
+```
+
+```{r code-version, echo=FALSE, results='asis'}
+```
+
+```{r}
+library(mashr); library(miximash)
+source('../code/plotCormotif.R')
+```
+
+```{r}
+set.seed(2018)
+data = simple_sims(500)
+
+mash_data = mash_set_data(data$Bhat, data$Shat)
+```
+
+# Mash
+```{r}
+U.c = cov_canonical(mash_data)
+mash.m = mash(mash_data, U.c)
+```
+```{r}
+barplot(get_estimated_pi(mash.m), las=2, cex.names = 0.7)
+```
+
+The log likelihood is
+```{r}
+get_loglik(mash.m)
+```
+
+# miximash
+```{r}
+fit = miximash(mash_data$Bhat, mash_data$Shat, K = 2:5, mess = TRUE)
+```
+
+```{r}
+plot(2:5, fit$loglike[,2], type = "l",xlab = "K",ylab = "loglike")
+```
+
+The log likelihood is `r fit$loglike[3,2]`.
+
+```{r}
+plotMotif(fit$allmotif[[3]])
+```
+
+```{r}
+plotMotif.mean(fit$allmotif[[3]], mixsd = fit$mixsd)
+```
+
+# Compare
+```{r}
+barplot(c(sqrt(mean((data$B - mash.m$result$PosteriorMean)^2)/mean((data$B -data$Bhat)^2)), sqrt(mean((data$B - fit$post_mean[[3]])^2)/mean((data$B - data$Bhat)^2))), ylim=c(0,0.8), names.arg = c('mash', 'miximash'), ylab='RRMSE')
+```
+
+```{r}
+sign.test.mash = data$B*mash.m$result$PosteriorMean
+sign.test.miximash = data$B*fit$post_mean[[3]]
+
+thresh.seq = seq(0, 1, by=0.0005)[-1]
+mashm = matrix(0,length(thresh.seq), 2)
+Mix = matrix(0,length(thresh.seq), 2)
+colnames(mashm) = colnames(Mix) = c('TPR', 'FPR')
+
+for(t in 1:length(thresh.seq)){
+  mashm[t,] = c( sum(sign.test.mash>0 & mash.m$result$lfsr <= thresh.seq[t])/sum(data$B!=0), sum(data$B==0 & mash.m$result$lfsr <=thresh.seq[t])/sum(data$B==0))
+  
+  Mix[t,] = c(sum(sign.test.miximash>0& fit$lfsr[[3]] <=thresh.seq[t])/sum(data$B!=0),  sum(data$B==0& fit$lfsr[[3]] <=thresh.seq[t])/sum(data$B==0))
+}
+```
+
+```{r}
+{plot(mashm[,'FPR'], mashm[,'TPR'], col='red',type='l',ylab="True Positive Rate",xlab="False Positive Rate")
+lines(Mix[,'FPR'], Mix[,'TPR'])
+legend('bottomright', c('mash', 'miximash'),col=c('red','black'),lty=c(1,1))
+}
+```
+
+# Session information
+
+```{r session-info}
+```
